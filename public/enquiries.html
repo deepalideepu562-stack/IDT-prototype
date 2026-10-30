@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Enquiries | Local Veggies Marketplace</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .status-badge-pending {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+    .status-badge-accepted {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status-badge-rejected {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .action-btn-group {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .reply-quote {
+      background: #eef7ed;
+      border-left: 3px solid var(--primary);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-box {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <!-- Notice Banner for Actions -->
+  <div id="pageNotice" class="notice" style="display: none;"></div>
+
+  <!-- GUEST VIEW: If not logged in -->
+  <div id="guestEnquiryNotice" class="notice notice-warn" style="display: none;">
+    <h3>Sign In Required</h3>
+    <p>Please log in to use the enquiries system:</p>
+    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+      <a href="customer-auth.html" class="btn btn-sm">🛒 Customer Login / Register</a>
+      <a href="vendor-auth.html" class="btn btn-sm btn-secondary">👨‍🌾 Vendor Login</a>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- VENDOR VIEW: Only Incoming Enquiries for Shop  -->
+  <!-- ============================================== -->
+  <section class="panel" id="vendorEnquiriesSection" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <span class="badge badge-vendor">👨‍🌾 Vendor Enquiries Inbox</span>
+        <h2 id="vendorShopHeading" style="margin: 8px 0 4px 0;">Incoming Customer Enquiries</h2>
+        <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
+          Review orders, accept or reject requests, and send reply messages directly to customers.
+        </p>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="loadVendorEnquiries()">↻ Refresh</button>
+    </div>
+
+    <div class="table-wrap" style="margin-top: 16px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Vegetable</th>
+            <th>Quantity</th>
+            <th>Customer Note</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Your Reply to Customer</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="vendorEnquiriesTableBody">
+          <tr><td colspan="8">Loading customer enquiries...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- CUSTOMER VIEW: Send Enquiry Form + Previous Enquiries -->
+  <!-- ============================================== -->
+  <div id="customerEnquiriesSection" style="display: none;">
+    <!-- Send Enquiry Form -->
+    <section class="panel">
+      <h2>📩 Send Enquiry to Vendor</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 16px 0;">
+        Have a question or want to pre-book fresh vegetables? Send a message directly to the vendor.
+      </p>
+
+      <form id="sendEnquiryForm" onsubmit="handleSendEnquiry(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="custName">Your Name *</label>
+            <input type="text" id="custName" required readonly style="background: #eef7ed;">
+          </div>
+          <div class="form-group">
+            <label for="prodName">Vegetable Name *</label>
+            <input type="text" id="prodName" required placeholder="e.g. Tomato">
+          </div>
+          <div class="form-group">
+            <label for="vendorName">Vendor / Shop Name *</label>
+            <input type="text" id="vendorName" required placeholder="e.g. Green Fresh Veggies">
+          </div>
+          <div class="form-group">
+            <label for="qtyVal">Quantity Required (kg) *</label>
+            <input type="number" id="qtyVal" required min="1" step="1" value="1" placeholder="e.g. 2">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="custMessage">Message / Pickup Note (Optional)</label>
+          <textarea id="custMessage" rows="2" placeholder="e.g. Can I pick this up today around 5 PM?"></textarea>
+        </div>
+        <button type="submit" class="btn">Send Enquiry</button>
+      </form>
+    </section>
+
+    <!-- Customer's Previous Enquiries Table with Vendor Reply -->
+    <section class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h2 style="margin: 0 0 4px 0;">📋 My Previous Enquiries</h2>
+          <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
+            Track status updates and replies from local vendors.
+          </p>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="loadCustomerEnquiries()">↻ Refresh</button>
+      </div>
+
+      <div class="table-wrap" style="margin-top: 14px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Vegetable</th>
+              <th>Vendor</th>
+              <th>Quantity</th>
+              <th>My Message</th>
+              <th>Status</th>
+              <th>Vendor Reply</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="customerEnquiriesTableBody">
+            <tr><td colspan="7">Loading your previous enquiries...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- VENDOR REPLY MODAL -->
+<div id="replyModal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="margin: 0; color: var(--primary);" id="replyModalHeading">💬 Reply to Customer</h3>
+      <button onclick="closeReplyModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
+    </div>
+
+    <div id="modalCustomerContext" style="background: #fbfdfa; border: 1px solid var(--border-card); padding: 12px; border-radius: 6px; margin-bottom: 14px; font-size: 13px;"></div>
+
+    <form id="vendorReplyForm" onsubmit="handleSendReply(event)">
+      <input type="hidden" id="replyEnquiryId" value="">
+
+      <div class="form-group">
+        <label for="replyStatusSelect">Update Order Status:</label>
+        <select id="replyStatusSelect">
+          <option value="Accepted">✔ Accept Order</option>
+          <option value="Pending">⏳ Keep Pending</option>
+          <option value="Rejected">✖ Reject Order</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="replyMessageInput">Reply Message to Customer *</label>
+        <textarea id="replyMessageInput" rows="3" required placeholder="e.g. Yes, we have packed 5kg fresh tomatoes for you. Ready for pickup!"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeReplyModal()">Cancel</button>
+        <button type="submit" class="btn btn-sm">Send Reply</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("enquiries");
+
+const currentUser = getCurrentUser();
+let currentVendorEnquiries = [];
+
+function showNotice(text, type = "success") {
+  const box = document.getElementById("pageNotice");
+  box.textContent = text;
+  box.className = "notice " + (type === "success" ? "notice-info" : "notice-error");
+  box.style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  setTimeout(() => { box.style.display = "none"; }, 4000);
+}
+
+// Check role and display role-specific view
+if (!currentUser) {
+  document.getElementById("guestEnquiryNotice").style.display = "block";
+} else if (currentUser.role === "vendor") {
+  document.getElementById("vendorEnquiriesSection").style.display = "block";
+  document.getElementById("vendorShopHeading").textContent = `Customer Enquiries for ${currentUser.shopName || currentUser.name}`;
+  loadVendorEnquiries();
+} else if (currentUser.role === "customer") {
+  document.getElementById("customerEnquiriesSection").style.display = "block";
+  document.getElementById("custName").value = currentUser.name;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const qProd = urlParams.get("product");
+  const qVend = urlParams.get("vendor");
+  if (qProd) document.getElementById("prodName").value = qProd;
+  if (qVend) document.getElementById("vendorName").value = qVend;
+
+  loadCustomerEnquiries();
+}
+
+// ==============================================
+// VENDOR FUNCTIONS (Load, Reply, Accept/Reject)
+// ==============================================
+async function loadVendorEnquiries() {
+  const tbody = document.getElementById("vendorEnquiriesTableBody");
+  const vendorName = currentUser.shopName || currentUser.name;
+
+  try {
+    const res = await fetch("/api/enquiries?vendor=" + encodeURIComponent(vendorName));
+    currentVendorEnquiries = await res.json();
+
+    if (!currentVendorEnquiries || currentVendorEnquiries.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">
+            No customer enquiries received yet for your shop.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = currentVendorEnquiries.map(e => {
+      let badgeClass = "status-badge-pending";
+      let statusIcon = "⏳";
+      if (e.status === "Accepted") {
+        badgeClass = "status-badge-accepted";
+        statusIcon = "✔";
+      } else if (e.status === "Rejected") {
+        badgeClass = "status-badge-rejected";
+        statusIcon = "✖";
+      }
+
+      const replyContent = e.reply ? `
+        <div class="reply-quote">
+          <strong>💬 Reply:</strong> ${escapeHTML(e.reply)}
+          <div style="font-size:10px; color:#666; margin-top:2px;">
+            ${e.replyDate ? new Date(e.replyDate).toLocaleDateString() : ''}
+          </div>
+        </div>
+      ` : `<span style="color:#888; font-size:12px; font-style:italic;">No reply sent yet</span>`;
+
+      return `
+        <tr>
+          <td><strong>${escapeHTML(e.name)}</strong></td>
+          <td>${escapeHTML(e.product)}</td>
+          <td>${e.qty} kg</td>
+          <td>${escapeHTML(e.message || "-")}</td>
+          <td>${new Date(e.date).toLocaleDateString()}</td>
+          <td>
+            <span class="badge ${badgeClass}">${statusIcon} ${escapeHTML(e.status || "Pending")}</span>
+          </td>
+          <td>${replyContent}</td>
+          <td>
+            <div class="action-btn-group">
+              <button class="btn btn-sm btn-secondary" onclick="openReplyModal(${e.id})" title="Reply to customer message">
+                💬 Reply
+              </button>
+              ${e.status !== "Accepted" ? `<button class="btn btn-sm" onclick="updateEnquiryStatus(${e.id}, 'Accepted')">✔ Accept</button>` : ''}
+              ${e.status !== "Rejected" ? `<button class="btn btn-sm btn-danger" onclick="updateEnquiryStatus(${e.id}, 'Rejected')">✖ Reject</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch (err) {
+    tbody.innerHTML = "<tr><td colspan='8' style='color:red;'>Unable to load enquiries.</td></tr>";
+  }
+}
+
+// Open Reply Modal
+function openReplyModal(enquiryId) {
+  const enquiry = currentVendorEnquiries.find(item => item.id === enquiryId);
+  if (!enquiry) return;
+
+  document.getElementById("replyEnquiryId").value = enquiry.id;
+  document.getElementById("modalCustomerContext").innerHTML = `
+    <strong>Customer:</strong> ${escapeHTML(enquiry.name)}<br>
+    <strong>Vegetable:</strong> ${escapeHTML(enquiry.product)} (${enquiry.qty} kg)<br>
+    <strong>Customer Message:</strong> "${escapeHTML(enquiry.message || 'No message')}"
+  `;
+
+  document.getElementById("replyStatusSelect").value = enquiry.status || "Accepted";
+  document.getElementById("replyMessageInput").value = enquiry.reply || "";
+
+  document.getElementById("replyModal").style.display = "flex";
+}
+
+function closeReplyModal() {
+  document.getElementById("replyModal").style.display = "none";
+}
+
+// Handle Submitting Vendor Reply
+async function handleSendReply(e) {
+  e.preventDefault();
+
+  const id = document.getElementById("replyEnquiryId").value;
+  const reply = document.getElementById("replyMessageInput").value.trim();
+  const status = document.getElementById("replyStatusSelect").value;
+  const vendorName = currentUser.shopName || currentUser.name;
+
+  if (!reply) {
+    alert("Please enter a reply message for the customer.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/enquiries/${id}/reply`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reply,
+        status,
+        vendorAuth: vendorName
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Unable to send reply.");
+      return;
+    }
+
+    closeReplyModal();
+    showNotice("Your reply has been sent to the customer!", "success");
+    loadVendorEnquiries();
+  } catch (err) {
+    alert("Network error sending reply.");
+  }
+}
+
+// Update Status (Accept / Reject) directly
+async function updateEnquiryStatus(enquiryId, newStatus) {
+  const vendorName = currentUser.shopName || currentUser.name;
+
+  try {
+    const res = await fetch(`/api/enquiries/${enquiryId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: newStatus,
+        vendorAuth: vendorName
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Unable to update enquiry status.");
+      return;
+    }
+
+    showNotice(`Enquiry marked as ${newStatus}!`, "success");
+    loadVendorEnquiries();
+  } catch (err) {
+    alert("Network error updating status.");
+  }
+}
+
+// ==============================================
+// CUSTOMER FUNCTIONS (Send & View With Replies)
+// ==============================================
+async function handleSendEnquiry(e) {
+  e.preventDefault();
+
+  const name = currentUser.name;
+  const product = document.getElementById("prodName").value.trim();
+  const vendor = document.getElementById("vendorName").value.trim();
+  const qty = Number(document.getElementById("qtyVal").value);
+  const message = document.getElementById("custMessage").value.trim();
+
+  if (!name || !product || !vendor || !qty || qty < 1) {
+    showNotice("Please fill in vegetable, vendor, and a valid quantity.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/enquiries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, product, vendor, qty, message })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showNotice(data.error || "Unable to send enquiry.", "error");
+      return;
+    }
+
+    showNotice(`Enquiry sent successfully to ${vendor} for ${product}!`, "success");
+    document.getElementById("prodName").value = "";
+    document.getElementById("vendorName").value = "";
+    document.getElementById("qtyVal").value = "1";
+    document.getElementById("custMessage").value = "";
+
+    loadCustomerEnquiries();
+  } catch (err) {
+    showNotice("Network error submitting enquiry.", "error");
+  }
+}
+
+async function loadCustomerEnquiries() {
+  const tbody = document.getElementById("customerEnquiriesTableBody");
+  const customerName = currentUser.name;
+
+  try {
+    const res = await fetch("/api/enquiries?customer=" + encodeURIComponent(customerName));
+    const enquiries = await res.json();
+
+    if (!enquiries || enquiries.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+            You have not submitted any enquiries yet. Use the form above to send your first enquiry!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = enquiries.map(e => {
+      let badgeClass = "status-badge-pending";
+      let statusIcon = "⏳";
+      if (e.status === "Accepted") {
+        badgeClass = "status-badge-accepted";
+        statusIcon = "✔";
+      } else if (e.status === "Rejected") {
+        badgeClass = "status-badge-rejected";
+        statusIcon = "✖";
+      }
+
+      const replyContent = e.reply ? `
+        <div class="reply-quote">
+          <strong>💬 Vendor:</strong> ${escapeHTML(e.reply)}
+          <div style="font-size:10px; color:#666; margin-top:2px;">
+            ${e.replyDate ? new Date(e.replyDate).toLocaleDateString() : ''}
+          </div>
+        </div>
+      ` : `<span style="color:#888; font-size:12px; font-style:italic;">Awaiting vendor reply...</span>`;
+
+      return `
+        <tr>
+          <td><strong>${escapeHTML(e.product)}</strong></td>
+          <td>👨‍🌾 ${escapeHTML(e.vendor)}</td>
+          <td>${e.qty} kg</td>
+          <td>${escapeHTML(e.message || "-")}</td>
+          <td>
+            <span class="badge ${badgeClass}">${statusIcon} ${escapeHTML(e.status || "Pending")}</span>
+          </td>
+          <td>${replyContent}</td>
+          <td>${new Date(e.date).toLocaleDateString()}</td>
+        </tr>
+      `;
+    }).join("");
+  } catch (err) {
+    tbody.innerHTML = "<tr><td colspan='7' style='color:red;'>Unable to load your enquiries.</td></tr>";
+  }
+}
+</script>
+</body>
+</html>

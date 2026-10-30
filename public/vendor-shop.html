@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Shop | Local Veggies</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <div style="margin-bottom: 14px;">
+    <a href="customer-dashboard.html" class="btn btn-sm btn-secondary">← Back to Customer Dashboard</a>
+  </div>
+
+  <!-- Loading State -->
+  <div id="shopLoading" class="panel" style="text-align: center; padding: 40px;">
+    <h3>Loading Vendor Shop details...</h3>
+    <p style="color: var(--text-muted);">Fetching fresh produce and location details.</p>
+  </div>
+
+  <!-- Shop Content (Hidden while loading) -->
+  <div id="shopContent" style="display: none;">
+    <!-- Vendor Profile Hero Card -->
+    <section class="panel" style="background: linear-gradient(135deg, #ffffff 0%, #f4fbf3 100%); border-left: 6px solid var(--primary);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div style="flex: 1 1 300px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span class="badge badge-vendor">👨‍🌾 Verified Local Vendor</span>
+            <span id="shopProduceCount" class="badge badge-success">- Vegetables Available</span>
+          </div>
+          <h2 id="shopNameTitle" style="font-size: 26px; margin: 4px 0 8px 0; color: var(--primary-dark);">Shop Name</h2>
+          <p id="shopOwnerSubtitle" style="color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0;">Operated by: -</p>
+
+          <div class="vendor-info-list" style="margin-top: 12px;">
+            <div class="vendor-info-item">
+              <span style="font-size: 16px;">📍</span>
+              <div>
+                <strong>Shop Address:</strong>
+                <div id="shopAddressText" style="color: #2e4a32;">-</div>
+              </div>
+            </div>
+            <div class="vendor-info-item">
+              <span style="font-size: 16px;">⏰</span>
+              <div>
+                <strong>Opening Hours:</strong>
+                <div id="shopHoursText" style="color: #2e4a32;">-</div>
+              </div>
+            </div>
+            <div class="vendor-info-item">
+              <span style="font-size: 16px;">📞</span>
+              <div>
+                <strong>Phone Contact:</strong>
+                <div id="shopPhoneText">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Maps & Action Block -->
+        <div style="display: flex; flex-direction: column; gap: 10px; align-self: center; min-width: 200px;">
+          <a id="shopMapsLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-maps" style="padding: 12px 18px; font-size: 14px; justify-content: center; box-shadow: 0 2px 6px rgba(26,115,232,0.3);">
+            <span>📍</span> Get Directions on Google Maps
+          </a>
+          <a id="shopCallLink" href="#" class="btn btn-secondary" style="font-size: 13px; text-align: center;">
+            <span>📞</span> Call Shop
+          </a>
+          <button onclick="openEnquiryModal()" class="btn btn-secondary" style="font-size: 13px;">
+            <span>📩</span> Send Direct Enquiry
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Available Vegetables Section -->
+    <section class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <h2 style="margin: 0;">Fresh Vegetables from this Shop</h2>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">Directly harvested, weighed fresh, and prepared for your pickup or delivery.</p>
+        </div>
+        <a href="customer-dashboard.html#cart" class="btn btn-sm">
+          🛒 Go to Cart & Checkout (<span id="cartCountBadge">0</span>)
+        </a>
+      </div>
+
+      <div id="vendorProductsGrid" class="products-grid">
+        <!-- Vegetable cards populated via JS -->
+      </div>
+      <div id="vendorNoProducts" style="display: none; text-align: center; padding: 40px; color: var(--text-muted);">
+        <p>This vendor has no vegetables listed at this moment. Please check back later!</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- Direct Enquiry Modal -->
+<div id="enquiryModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 16px;">
+  <div style="background: white; border-radius: 12px; max-width: 480px; width: 100%; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <h3 style="margin: 0; color: var(--primary);">📩 Send Enquiry to Vendor</h3>
+      <button onclick="closeEnquiryModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">&times;</button>
+    </div>
+    <form id="directEnquiryForm">
+      <div class="form-group">
+        <label>Vendor Shop</label>
+        <input type="text" id="modalVendorName" readonly style="background: #f1f7f0; font-weight: bold;">
+      </div>
+      <div class="form-group">
+        <label>Select Vegetable</label>
+        <select id="modalProductSelect" required></select>
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="modalCustomerName" required placeholder="e.g. Priya Sharma">
+      </div>
+      <div class="form-group">
+        <label>Requested Quantity (kg)</label>
+        <input type="number" id="modalQty" min="1" max="100" value="1" required>
+      </div>
+      <div class="form-group">
+        <label>Message / Note</label>
+        <textarea id="modalMessage" rows="3" placeholder="e.g. Please keep ready for evening 6 PM pickup."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" onclick="closeEnquiryModal()" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn">Send Enquiry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("vegetables");
+
+// Get vendor name from URL query parameter
+const urlParams = new URLSearchParams(window.location.search);
+const vendorParam = urlParams.get("vendor");
+let currentVendorData = null;
+
+if (!vendorParam) {
+  document.getElementById("shopLoading").innerHTML = `
+    <h3 style="color: var(--danger);">No vendor specified.</h3>
+    <p>Please select a vendor shop from the <a href="customer-dashboard.html">Customer Dashboard</a>.</p>
+  `;
+} else {
+  loadVendorShop(vendorParam);
+}
+
+// Shopping cart helpers in localStorage
+function getCart() {
+  try {
+    return JSON.parse(localStorage.getItem("localVeggiesCart") || "[]");
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCart(cart) {
+  localStorage.setItem("localVeggiesCart", JSON.stringify(cart));
+  updateCartBadge();
+}
+
+function updateCartBadge() {
+  const cart = getCart();
+  const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const badge = document.getElementById("cartCountBadge");
+  if (badge) badge.textContent = totalCount;
+}
+
+updateCartBadge();
+
+async function loadVendorShop(vendorName) {
+  try {
+    const res = await fetch("/api/vendors/" + encodeURIComponent(vendorName));
+    if (!res.ok) throw new Error("Shop not found");
+    const data = await res.json();
+    currentVendorData = data;
+
+    document.getElementById("shopLoading").style.display = "none";
+    document.getElementById("shopContent").style.display = "block";
+
+    // Shop details
+    document.title = `${data.shopName} | Local Veggies`;
+    document.getElementById("shopNameTitle").textContent = data.shopName;
+    document.getElementById("shopOwnerSubtitle").textContent = `Operated by: ${data.ownerName || data.shopName}`;
+    document.getElementById("shopAddressText").textContent = data.address || "Local Produce Bazaar";
+    document.getElementById("shopHoursText").textContent = data.openingHours || "6:30 AM – 8:30 PM (Daily)";
+    
+    if (data.phone && data.phone !== "Contact at stall") {
+      document.getElementById("shopPhoneText").innerHTML = `<a href="tel:${escapeHTML(data.phone)}" style="color: var(--primary); font-weight: bold; text-decoration: none;">${escapeHTML(data.phone)}</a>`;
+      document.getElementById("shopCallLink").href = `tel:${data.phone}`;
+      document.getElementById("shopCallLink").style.display = "inline-flex";
+    } else {
+      document.getElementById("shopPhoneText").textContent = "Available in person at stall";
+      document.getElementById("shopCallLink").style.display = "none";
+    }
+
+    // Google Maps link
+    const mapsLink = document.getElementById("shopMapsLink");
+    mapsLink.href = data.mapsUrl;
+
+    const products = data.products || [];
+    document.getElementById("shopProduceCount").textContent = `${products.length} Vegetable${products.length === 1 ? '' : 's'} Available`;
+
+    // Populate vegetable cards
+    const grid = document.getElementById("vendorProductsGrid");
+    const emptyNotice = document.getElementById("vendorNoProducts");
+
+    if (products.length === 0) {
+      grid.innerHTML = "";
+      emptyNotice.style.display = "block";
+      return;
+    }
+
+    emptyNotice.style.display = "none";
+    grid.innerHTML = products.map(p => {
+      const isOutOfStock = p.qty <= 0;
+      const isLowStock = p.qty > 0 && p.qty <= 3;
+      const stockClass = isOutOfStock ? "stock-out" : (isLowStock ? "stock-low" : "stock-ok");
+      const stockText = isOutOfStock ? "Out of Stock" : (isLowStock ? `Only ${p.qty} kg left` : `${p.qty} kg in stock`);
+
+      const imgHTML = p.image 
+        ? `<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" class="product-img" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'product-img-placeholder\\'>🥕</span>';">`
+        : `<span class="product-img-placeholder">🥦</span>`;
+
+      return `
+        <div class="product-card-enhanced">
+          <div class="product-img-wrapper">
+            ${imgHTML}
+            <span class="product-category-tag">${escapeHTML(p.category || "Vegetables")}</span>
+            <span class="product-stock-tag ${stockClass}">${stockText}</span>
+          </div>
+          <div class="product-body">
+            <div>
+              <h3>${escapeHTML(p.name)}</h3>
+              <div class="product-price-row">
+                <span class="product-price">₹${p.price}</span>
+                <span class="product-unit">/ kg</span>
+              </div>
+            </div>
+            
+            <div class="product-actions">
+              ${isOutOfStock ? `
+                <button class="btn btn-secondary btn-sm" disabled style="width: 100%; opacity: 0.6;">Out of Stock</button>
+              ` : `
+                <div class="qty-stepper">
+                  <button type="button" onclick="adjustQty(${p.id}, -1)">-</button>
+                  <input type="number" id="qty-input-${p.id}" value="1" min="1" max="${p.qty}">
+                  <button type="button" onclick="adjustQty(${p.id}, 1, ${p.qty})">+</button>
+                </div>
+                <button onclick="addToCart(${p.id})" class="btn btn-sm" style="flex: 1;">
+                  🛒 Add
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Populate enquiry modal dropdown
+    const select = document.getElementById("modalProductSelect");
+    select.innerHTML = products.map(p => `<option value="${escapeHTML(p.name)}">${escapeHTML(p.name)} (₹${p.price}/kg)</option>`).join("");
+    document.getElementById("modalVendorName").value = data.shopName;
+
+    const user = getCurrentUser();
+    if (user && user.name) {
+      document.getElementById("modalCustomerName").value = user.name;
+    }
+
+  } catch (err) {
+    document.getElementById("shopLoading").innerHTML = `
+      <h3 style="color: var(--danger);">Vendor shop could not be loaded.</h3>
+      <p>Error details: ${escapeHTML(err.message)}</p>
+      <a href="customer-dashboard.html" class="btn btn-sm">Return to Customer Dashboard</a>
+    `;
+  }
+}
+
+function adjustQty(productId, delta, maxStock) {
+  const input = document.getElementById(`qty-input-${productId}`);
+  if (!input) return;
+  let val = parseInt(input.value) || 1;
+  val += delta;
+  if (val < 1) val = 1;
+  if (maxStock && val > maxStock) val = maxStock;
+  input.value = val;
+}
+
+function addToCart(productId) {
+  if (!currentVendorData || !currentVendorData.products) return;
+  const product = currentVendorData.products.find(p => p.id === productId);
+  if (!product) return;
+
+  const input = document.getElementById(`qty-input-${productId}`);
+  const qty = parseInt(input ? input.value : 1) || 1;
+
+  if (qty > product.qty) {
+    alert(`Only ${product.qty} kg available for ${product.name}.`);
+    return;
+  }
+
+  const cart = getCart();
+  const existing = cart.find(item => item.productId === product.id);
+
+  if (existing) {
+    if (existing.qty + qty > product.qty) {
+      alert(`Cannot add more. You already have ${existing.qty} kg in your cart, and only ${product.qty} kg are available.`);
+      return;
+    }
+    existing.qty += qty;
+  } else {
+    cart.push({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      qty: qty,
+      vendor: product.vendor,
+      category: product.category || "Vegetables",
+      image: product.image || ""
+    });
+  }
+
+  saveCart(cart);
+  alert(`Added ${qty} kg of ${product.name} to your cart! 🛒`);
+}
+
+function openEnquiryModal() {
+  document.getElementById("enquiryModal").style.display = "flex";
+}
+
+function closeEnquiryModal() {
+  document.getElementById("enquiryModal").style.display = "none";
+}
+
+document.getElementById("directEnquiryForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const product = document.getElementById("modalProductSelect").value;
+  const vendor = document.getElementById("modalVendorName").value;
+  const name = document.getElementById("modalCustomerName").value.trim();
+  const qty = parseInt(document.getElementById("modalQty").value) || 1;
+  const message = document.getElementById("modalMessage").value.trim();
+
+  try {
+    const res = await fetch("/api/enquiries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, product, vendor, qty, message })
+    });
+    const result = await res.json();
+    if (res.ok) {
+      alert("Enquiry sent successfully to " + vendor + "!");
+      closeEnquiryModal();
+      document.getElementById("modalMessage").value = "";
+    } else {
+      alert(result.error || "Failed to send enquiry.");
+    }
+  } catch (err) {
+    alert("Connection error sending enquiry.");
+  }
+});
+</script>
+</body>
+</html>
+

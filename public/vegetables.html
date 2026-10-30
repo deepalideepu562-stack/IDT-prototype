@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Vegetables | Local Veggies Marketplace</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .veg-card-img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #eef7ed;
+      border: 1px solid #e1ede0;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <section class="panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h2 style="margin: 0 0 4px 0;">🥕 Available Vegetables</h2>
+        <p style="margin: 0; color: var(--text-muted); font-size: 14px;">
+          Fresh stock from verified local vendors & nearby farms.
+        </p>
+      </div>
+
+      <div id="vendorActionBtn" style="display: none;">
+        <a href="vendor-dashboard.html" class="btn btn-sm">👨‍🌾 Vendor Dashboard</a>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; align-items: center;">
+      <input id="searchInput" placeholder="Search by name, vendor, or category..." style="flex: 2 1 240px;" oninput="filterProducts()">
+      <select id="categoryFilter" style="flex: 1 1 180px;" onchange="filterProducts()">
+        <option value="all">All Categories</option>
+        <option value="Daily Essentials">Daily Essentials</option>
+        <option value="Leafy Greens">Leafy Greens</option>
+        <option value="Root Vegetables">Root Vegetables</option>
+        <option value="Gourds & Squash">Gourds & Cucumbers</option>
+        <option value="Organic Produce">Organic Produce</option>
+        <option value="Exotic Vegetables">Exotic Vegetables</option>
+      </select>
+      <select id="stockFilter" style="flex: 1 1 150px;" onchange="filterProducts()">
+        <option value="all">All Stock Status</option>
+        <option value="in_stock">In Stock Only</option>
+        <option value="out_stock">Out of Stock</option>
+      </select>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="products-grid" id="vegetablesGrid">
+      <p>Loading vegetables...</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("vegetables");
+
+let allProducts = [];
+const currentUser = getCurrentUser();
+const DEFAULT_IMG = "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300&q=80";
+
+if (currentUser && currentUser.role === "vendor") {
+  document.getElementById("vendorActionBtn").style.display = "block";
+}
+
+async function fetchProducts() {
+  const container = document.getElementById("vegetablesGrid");
+  try {
+    const res = await fetch("/api/products");
+    allProducts = await res.json();
+    renderProducts(allProducts);
+  } catch (err) {
+    container.innerHTML = "<p style='color:red;'>Unable to load vegetables. Check server status.</p>";
+  }
+}
+
+function filterProducts() {
+  const query = document.getElementById("searchInput").value.toLowerCase().trim();
+  const category = document.getElementById("categoryFilter").value.toLowerCase();
+  const filter = document.getElementById("stockFilter").value;
+
+  const filtered = allProducts.filter(p => {
+    const pCategory = (p.category || "").toLowerCase();
+    const matchesSearch = p.name.toLowerCase().includes(query) ||
+                          p.vendor.toLowerCase().includes(query) ||
+                          pCategory.includes(query);
+
+    if (!matchesSearch) return false;
+
+    if (category !== "all" && pCategory !== category) return false;
+
+    if (filter === "in_stock") return p.qty > 0;
+    if (filter === "out_stock") return p.qty <= 0;
+    return true;
+  });
+
+  renderProducts(filtered);
+}
+
+function renderProducts(products) {
+  const container = document.getElementById("vegetablesGrid");
+
+  if (!products || products.length === 0) {
+    container.innerHTML = "<p>No vegetables found matching your filters.</p>";
+    return;
+  }
+
+  container.innerHTML = products.map(p => {
+    const isOwner = currentUser && currentUser.role === "vendor" &&
+      (p.vendor.toLowerCase() === (currentUser.shopName || "").toLowerCase() ||
+       p.vendor.toLowerCase() === (currentUser.name || "").toLowerCase());
+
+    const imgSrc = p.image || DEFAULT_IMG;
+    const categoryName = p.category || "Vegetables";
+
+    return `
+      <div class="product-card">
+        ${isOwner ? '<span class="badge badge-vendor" style="position:absolute; top:12px; right:12px; z-index:2;">Your Produce</span>' : ''}
+        <div>
+          <img class="veg-card-img" src="${escapeHTML(imgSrc)}" alt="${escapeHTML(p.name)}" onerror="this.src='${DEFAULT_IMG}'">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+            <h3 style="margin: 0;">${escapeHTML(p.name)}</h3>
+            <span class="badge" style="background:#e8f5e9; color:#2e7d32; font-size:11px; white-space:nowrap;">${escapeHTML(categoryName)}</span>
+          </div>
+          <p style="margin: 6px 0 0 0;">
+            <a href="vendor-shop.html?vendor=${encodeURIComponent(p.vendor)}" class="badge badge-vendor" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="View shop profile & Google Maps directions">
+              👨‍🌾 ${escapeHTML(p.vendor)} 📍
+            </a>
+          </p>
+          <p style="margin-top: 8px;">Price: <strong>₹${p.price} / kg</strong></p>
+          <p>Available: <strong>${p.qty} kg</strong></p>
+          ${p.expiryDate ? `<p style="font-size:12px; color:var(--text-muted); margin: 3px 0;">Best Before: <strong>${p.expiryDate}</strong></p>` : ''}
+          <p>
+            ${p.qty > 0
+              ? '<span class="badge badge-success">✔ In Stock</span>'
+              : '<span class="badge badge-danger">✖ Out of Stock</span>'}
+          </p>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap;">
+          ${isOwner
+            ? `<a href="vendor-dashboard.html" class="btn btn-sm btn-secondary" style="flex:1;">✏️ Manage in Dashboard</a>`
+            : `
+              <a href="vendor-shop.html?vendor=${encodeURIComponent(p.vendor)}" class="btn btn-sm btn-secondary" style="flex:1; text-align:center;">🏪 Visit Shop</a>
+              <a href="enquiries.html?product=${encodeURIComponent(p.name)}&vendor=${encodeURIComponent(p.vendor)}" class="btn btn-sm" style="flex:1; text-align:center;">💬 Enquire</a>
+            `
+          }
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+fetchProducts();
+</script>
+</body>
+</html>

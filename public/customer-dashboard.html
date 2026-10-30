@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard | Local Veggies</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <!-- Notice if not logged in as customer -->
+  <div id="guestNotice" class="notice notice-warn" style="display: none;">
+    <h3>Customer Sign In Required</h3>
+    <p>Please log in with your customer account to browse vegetables, place orders, view order status, and track your enquiries.</p>
+    <a href="customer-auth.html" class="btn btn-sm">Go to Customer Login →</a>
+  </div>
+
+  <div id="dashboardContent" style="display: none;">
+    <!-- Welcome Header & Quick Summary -->
+    <section class="panel" style="background: linear-gradient(135deg, #ffffff 0%, #f4fbf3 100%); border-left: 6px solid var(--primary);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <span class="badge badge-customer">🛒 Customer Portal</span>
+          <h2 id="customerNameHeading" style="margin: 6px 0 2px 0; font-size: 24px; color: var(--primary-dark);">Customer Dashboard</h2>
+          <p id="customerContactSubtitle" style="margin: 0; color: var(--text-muted); font-size: 13px;">Welcome to your neighborhood produce hub</p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button onclick="switchTab('browse')" class="btn btn-sm">🥕 Shop Veggies</button>
+          <button onclick="switchTab('cart')" class="btn btn-sm btn-secondary">
+            🛒 Cart (<span class="cart-pill-count">0</span>)
+          </button>
+          <button onclick="switchTab('orders')" class="btn btn-sm btn-secondary">📦 My Orders</button>
+        </div>
+      </div>
+
+      <!-- Quick Summary Stats -->
+      <div class="stats-grid" style="margin-top: 16px;">
+        <div class="stat-box" onclick="switchTab('browse')" style="cursor: pointer;">
+          <div class="stat-number" id="statMarketCount">-</div>
+          <div class="stat-label">Vegetables Available</div>
+        </div>
+        <div class="stat-box" onclick="switchTab('shops')" style="cursor: pointer;">
+          <div class="stat-number" id="statVendorsCount">-</div>
+          <div class="stat-label">Local Vendor Shops</div>
+        </div>
+        <div class="stat-box" onclick="switchTab('cart')" style="cursor: pointer;">
+          <div class="stat-number cart-pill-count">0</div>
+          <div class="stat-label">Items in Cart</div>
+        </div>
+        <div class="stat-box" onclick="switchTab('orders')" style="cursor: pointer;">
+          <div class="stat-number" id="statOrdersCount">0</div>
+          <div class="stat-label">My Orders</div>
+        </div>
+        <div class="stat-box" onclick="switchTab('enquiries')" style="cursor: pointer;">
+          <div class="stat-number" id="statEnquiriesCount">0</div>
+          <div class="stat-label">My Enquiries</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <div class="dashboard-tabs">
+      <button class="tab-btn active" id="tabBtn-browse" onclick="switchTab('browse')">
+        🥕 Browse Vegetables
+      </button>
+      <button class="tab-btn" id="tabBtn-shops" onclick="switchTab('shops')">
+        🏪 Vendor Shops & Directions
+      </button>
+      <button class="tab-btn" id="tabBtn-cart" onclick="switchTab('cart')">
+        🛒 Cart & Checkout <span class="tab-badge cart-pill-count" style="display: none;">0</span>
+      </button>
+      <button class="tab-btn" id="tabBtn-orders" onclick="switchTab('orders')">
+        📦 My Orders & Status
+      </button>
+      <button class="tab-btn" id="tabBtn-enquiries" onclick="switchTab('enquiries')">
+        📩 My Enquiries
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: BROWSE VEGETABLES WITH IMAGES & FILTERS -->
+    <!-- ========================================== -->
+    <section id="tabPanel-browse" class="tab-panel">
+      <!-- Search & Category Filters -->
+      <div class="filter-bar">
+        <div class="filter-search-input">
+          <input type="text" id="searchInput" placeholder="🔍 Search vegetables, vendors or categories..." oninput="handleSearchFilter()">
+        </div>
+        <div class="filter-dropdown">
+          <select id="categorySelect" onchange="handleSearchFilter()">
+            <option value="all">🥦 All Categories</option>
+            <option value="Daily Essentials">Daily Essentials</option>
+            <option value="Leafy Greens">Leafy Greens</option>
+            <option value="Root Vegetables">Root Vegetables</option>
+            <option value="Gourds & Squash">Gourds & Squash</option>
+            <option value="Herbs & Seasoning">Herbs & Seasoning</option>
+            <option value="Exotics">Exotics</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="resetFilters()" class="btn btn-sm btn-secondary">Reset Filters</button>
+        </div>
+      </div>
+
+      <!-- Produce Grid -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 id="produceCountHeading" style="margin: 0; font-size: 17px; color: var(--primary);">Fresh Produce</h3>
+        <span style="font-size: 13px; color: var(--text-muted);">Prices updated daily by local vendors</span>
+      </div>
+
+      <div id="productsGrid" class="products-grid">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+          <p>Loading fresh vegetables...</p>
+        </div>
+      </div>
+      <div id="noProductsFound" style="display: none; text-align: center; padding: 40px;" class="panel">
+        <p>No vegetables found matching your search. Try resetting your filters.</p>
+        <button onclick="resetFilters()" class="btn btn-sm">Show All Vegetables</button>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: VENDOR SHOPS & GOOGLE MAPS -->
+    <!-- ========================================== -->
+    <section id="tabPanel-shops" class="tab-panel" style="display: none;">
+      <div class="panel" style="margin-bottom: 16px;">
+        <h2 style="margin: 0 0 4px 0;">🏪 Neighborhood Vendor Shops</h2>
+        <p style="margin: 0; font-size: 14px; color: var(--text-muted);">
+          Visit your local vendors directly in person or locate their stalls using Google Maps directions.
+        </p>
+      </div>
+
+      <div id="vendorShopsGrid" class="products-grid">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+          <p>Loading vendor shops...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: CART & CHECKOUT (AUTOMATIC TOTALS) -->
+    <!-- ========================================== -->
+    <section id="tabPanel-cart" class="tab-panel" style="display: none;">
+      <div id="emptyCartMessage" class="panel" style="text-align: center; padding: 50px 20px; display: none;">
+        <div style="font-size: 48px; margin-bottom: 10px;">🛒</div>
+        <h3>Your shopping cart is empty</h3>
+        <p style="color: var(--text-muted); margin-bottom: 18px;">Explore fresh vegetables from local vendors to place an order for pickup or delivery.</p>
+        <button onclick="switchTab('browse')" class="btn">🥕 Browse Vegetables</button>
+      </div>
+
+      <div id="cartActiveLayout" class="cart-layout" style="display: none;">
+        <!-- Left: Cart Items List -->
+        <div class="panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-card); padding-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 19px;">🛒 Selected Vegetables</h2>
+            <button onclick="clearEntireCart()" class="btn btn-sm btn-secondary" style="color: var(--danger);">Clear Cart</button>
+          </div>
+
+          <div id="cartItemsList">
+            <!-- Items rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Right: Fulfillment & Checkout Form -->
+        <div class="panel">
+          <h2 style="font-size: 19px; margin-top: 0;">Order & Fulfillment</h2>
+
+          <!-- Step 1: Choose Fulfillment Type -->
+          <div class="form-group">
+            <label>Choose Fulfillment Method:</label>
+            <div class="fulfillment-options">
+              <div id="fulfillBtn-pickup" class="fulfillment-btn active" onclick="setFulfillment('Shop Pickup')">
+                <div style="font-size: 20px; margin-bottom: 4px;">🏪</div>
+                <div>Shop Pickup</div>
+                <div style="font-size: 11px; color: #2e7d32; font-weight: normal; margin-top: 2px;">FREE (₹0 fee)</div>
+              </div>
+              <div id="fulfillBtn-delivery" class="fulfillment-btn" onclick="setFulfillment('Home Delivery')">
+                <div style="font-size: 20px; margin-bottom: 4px;">🚚</div>
+                <div>Home Delivery</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-top: 2px;">₹30 fee (Free &gt; ₹200)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Address field (only for Home Delivery) -->
+          <div id="deliveryAddressGroup" class="form-group" style="display: none;">
+            <label for="deliveryAddressInput">Home Delivery Address *</label>
+            <textarea id="deliveryAddressInput" rows="2" placeholder="House/Flat No., Apartment, Street, Landmark..."></textarea>
+            <span style="font-size: 11px; color: var(--text-muted);">Fresh vegetables will be brought directly to this address.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="orderContactPhone">Contact Phone Number *</label>
+            <input type="tel" id="orderContactPhone" placeholder="10-digit mobile number">
+          </div>
+
+          <div class="form-group">
+            <label for="orderNotesInput">Notes / Special Instructions (Optional)</label>
+            <input type="text" id="orderNotesInput" placeholder="e.g. Please select ripe tomatoes">
+          </div>
+
+          <!-- Total Calculation Breakdown -->
+          <div class="order-summary-box">
+            <div class="summary-line">
+              <span>Vegetables Subtotal:</span>
+              <span id="summarySubtotal">₹0</span>
+            </div>
+            <div class="summary-line">
+              <span id="summaryFulfillmentLabel">Shop Pickup:</span>
+              <span id="summaryDeliveryFee">₹0</span>
+            </div>
+            <div class="summary-line summary-total">
+              <span>Total Price:</span>
+              <span id="summaryGrandTotal">₹0</span>
+            </div>
+          </div>
+
+          <button id="btnPlaceOrder" onclick="placeOrder()" class="btn" style="width: 100%; margin-top: 16px; padding: 12px; font-size: 16px;">
+            ✅ Place Order Now
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: MY ORDERS & ORDER STATUS -->
+    <!-- ========================================== -->
+    <section id="tabPanel-orders" class="tab-panel" style="display: none;">
+      <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="margin: 0;">📦 My Orders & Live Status</h2>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">Track the status of your Shop Pickups and Home Deliveries.</p>
+          </div>
+          <button onclick="loadCustomerOrders()" class="btn btn-sm btn-secondary">🔄 Refresh Orders</button>
+        </div>
+
+        <div id="customerOrdersContainer" style="margin-top: 16px;">
+          <p>Loading your orders...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: MY ENQUIRIES -->
+    <!-- ========================================== -->
+    <section id="tabPanel-enquiries" class="tab-panel" style="display: none;">
+      <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="margin: 0;">📩 My Enquiries & Vendor Replies</h2>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">View previous enquiries sent to local vendors and read their replies.</p>
+          </div>
+          <a href="enquiries.html" class="btn btn-sm">Submit New Enquiry →</a>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Vegetable</th>
+                <th>Vendor Shop</th>
+                <th>Qty</th>
+                <th>My Message</th>
+                <th>Status</th>
+                <th>Vendor Reply</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="myEnquiriesBody">
+              <tr><td colspan="7">Loading your enquiries...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("customer-dashboard");
+
+const user = getCurrentUser();
+let allProducts = [];
+let allVendors = [];
+let selectedFulfillment = "Shop Pickup";
+
+if (!user || user.role !== "customer") {
+  document.getElementById("guestNotice").style.display = "block";
+} else {
+  document.getElementById("dashboardContent").style.display = "block";
+  document.getElementById("customerNameHeading").textContent = "Welcome, " + user.name;
+  document.getElementById("customerContactSubtitle").textContent = `Email: ${user.email} ${user.phone ? '• Phone: ' + user.phone : ''}`;
+  if (user.phone) {
+    const phoneInput = document.getElementById("orderContactPhone");
+    if (phoneInput) phoneInput.value = user.phone;
+  }
+  initDashboard();
+}
+
+// Tab Switching
+function switchTab(tabId) {
+  const tabs = ["browse", "shops", "cart", "orders", "enquiries"];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`tabBtn-${t}`);
+    const panel = document.getElementById(`tabPanel-${t}`);
+    if (btn) btn.classList.toggle("active", t === tabId);
+    if (panel) panel.style.display = t === tabId ? "block" : "none";
+  });
+
+  if (tabId === "cart") {
+    renderCart();
+  } else if (tabId === "orders") {
+    loadCustomerOrders();
+  } else if (tabId === "enquiries") {
+    loadCustomerEnquiries();
+  } else if (tabId === "shops") {
+    renderVendorShops();
+  }
+
+  // Update hash without jump
+  window.history.replaceState(null, null, `#${tabId}`);
+}
+
+// Shopping Cart Helpers in localStorage
+function getCart() {
+  try {
+    return JSON.parse(localStorage.getItem("localVeggiesCart") || "[]");
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCart(cart) {
+  localStorage.setItem("localVeggiesCart", JSON.stringify(cart));
+  updateCartCounts();
+}
+
+function updateCartCounts() {
+  const cart = getCart();
+  const count = cart.reduce((sum, item) => sum + item.qty, 0);
+  document.querySelectorAll(".cart-pill-count").forEach(el => {
+    el.textContent = count;
+    if (el.classList.contains("tab-badge")) {
+      el.style.display = count > 0 ? "inline-block" : "none";
+    }
+  });
+}
+
+async function initDashboard() {
+  updateCartCounts();
+
+  // Handle URL hash if present
+  const hash = window.location.hash.replace("#", "");
+  if (["browse", "shops", "cart", "orders", "enquiries"].includes(hash)) {
+    switchTab(hash);
+  }
+
+  await Promise.all([
+    loadProducts(),
+    loadVendors(),
+    loadCustomerOrders(),
+    loadCustomerEnquiries()
+  ]);
+}
+
+// 1. Load Products for Browse Tab
+async function loadProducts() {
+  try {
+    const res = await fetch("/api/products");
+    allProducts = await res.json();
+    document.getElementById("statMarketCount").textContent = allProducts.length;
+    renderProducts(allProducts);
+  } catch (err) {
+    document.getElementById("productsGrid").innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; color: red;">
+        Failed to load vegetables. Please refresh.
+      </div>
+    `;
+  }
+}
+
+function renderProducts(products) {
+  const grid = document.getElementById("productsGrid");
+  const noMatch = document.getElementById("noProductsFound");
+  document.getElementById("produceCountHeading").textContent = `Fresh Produce (${products.length} items)`;
+
+  if (products.length === 0) {
+    grid.innerHTML = "";
+    noMatch.style.display = "block";
+    return;
+  }
+
+  noMatch.style.display = "none";
+  grid.innerHTML = products.map(p => {
+    const isOutOfStock = p.qty <= 0;
+    const isLowStock = p.qty > 0 && p.qty <= 3;
+    const stockClass = isOutOfStock ? "stock-out" : (isLowStock ? "stock-low" : "stock-ok");
+    const stockText = isOutOfStock ? "Out of Stock" : (isLowStock ? `Only ${p.qty} kg left` : `${p.qty} kg in stock`);
+
+    const imgHTML = p.image
+      ? `<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" class="product-img" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'product-img-placeholder\\'>🥕</span>';">`
+      : `<span class="product-img-placeholder">🥦</span>`;
+
+    return `
+      <div class="product-card-enhanced">
+        <div class="product-img-wrapper">
+          ${imgHTML}
+          <span class="product-category-tag">${escapeHTML(p.category || "Vegetables")}</span>
+          <span class="product-stock-tag ${stockClass}">${stockText}</span>
+        </div>
+        <div class="product-body">
+          <div>
+            <h3>${escapeHTML(p.name)}</h3>
+            <a href="vendor-shop.html?vendor=${encodeURIComponent(p.vendor)}" class="product-vendor-link" title="Visit shop and see Google Maps directions">
+              🏪 ${escapeHTML(p.vendor)} <span style="font-size: 11px;">(Visit Shop →)</span>
+            </a>
+            <div class="product-price-row">
+              <span class="product-price">₹${p.price}</span>
+              <span class="product-unit">/ kg</span>
+            </div>
+          </div>
+
+          <div class="product-actions">
+            ${isOutOfStock ? `
+              <button class="btn btn-secondary btn-sm" disabled style="width: 100%; opacity: 0.6;">Out of Stock</button>
+            ` : `
+              <div class="qty-stepper">
+                <button type="button" onclick="adjustProductQty(${p.id}, -1)">-</button>
+                <input type="number" id="qty-input-${p.id}" value="1" min="1" max="${p.qty}">
+                <button type="button" onclick="adjustProductQty(${p.id}, 1, ${p.qty})">+</button>
+              </div>
+              <button onclick="addToCartFromBrowse(${p.id})" class="btn btn-sm" style="flex: 1;">
+                🛒 Add
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function adjustProductQty(productId, delta, maxStock) {
+  const input = document.getElementById(`qty-input-${productId}`);
+  if (!input) return;
+  let val = parseInt(input.value) || 1;
+  val += delta;
+  if (val < 1) val = 1;
+  if (maxStock && val > maxStock) val = maxStock;
+  input.value = val;
+}
+
+function addToCartFromBrowse(productId) {
+  const product = allProducts.find(p => p.id === productId);
+  if (!product) return;
+
+  const input = document.getElementById(`qty-input-${productId}`);
+  const qty = parseInt(input ? input.value : 1) || 1;
+
+  if (qty > product.qty) {
+    alert(`Only ${product.qty} kg available for ${product.name}.`);
+    return;
+  }
+
+  const cart = getCart();
+  const existing = cart.find(item => item.productId === product.id);
+
+  if (existing) {
+    if (existing.qty + qty > product.qty) {
+      alert(`Cannot add more. You have ${existing.qty} kg in your cart, and only ${product.qty} kg are available.`);
+      return;
+    }
+    existing.qty += qty;
+  } else {
+    cart.push({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      qty: qty,
+      vendor: product.vendor,
+      category: product.category || "Vegetables",
+      image: product.image || ""
+    });
+  }
+
+  saveCart(cart);
+  alert(`Added ${qty} kg of ${product.name} to cart! 🛒`);
+}
+
+// Search and Category Filter Handler
+function handleSearchFilter() {
+  const searchVal = document.getElementById("searchInput").value.trim().toLowerCase();
+  const catVal = document.getElementById("categorySelect").value;
+
+  let filtered = allProducts;
+
+  if (catVal && catVal !== "all") {
+    filtered = filtered.filter(p => (p.category || "").toLowerCase() === catVal.toLowerCase());
+  }
+
+  if (searchVal) {
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(searchVal) ||
+      p.vendor.toLowerCase().includes(searchVal) ||
+      (p.category || "").toLowerCase().includes(searchVal)
+    );
+  }
+
+  renderProducts(filtered);
+}
+
+function resetFilters() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("categorySelect").value = "all";
+  renderProducts(allProducts);
+}
+
+// 2. Load and Render Vendor Shops & Google Maps Links
+async function loadVendors() {
+  try {
+    const res = await fetch("/api/vendors");
+    allVendors = await res.json();
+    document.getElementById("statVendorsCount").textContent = allVendors.length;
+    renderVendorShops();
+  } catch (err) {
+    console.error("Failed to load vendors", err);
+  }
+}
+
+function renderVendorShops() {
+  const grid = document.getElementById("vendorShopsGrid");
+  if (!grid) return;
+
+  if (allVendors.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px;">No vendor shops found.</div>`;
+    return;
+  }
+
+  grid.innerHTML = allVendors.map(v => `
+    <div class="vendor-shop-card">
+      <div>
+        <div class="vendor-shop-header">
+          <div>
+            <h3 class="vendor-shop-title">🏪 ${escapeHTML(v.shopName)}</h3>
+            <span style="font-size: 12px; color: var(--text-muted);">Owner: ${escapeHTML(v.ownerName)}</span>
+          </div>
+          <span class="badge badge-vendor">${v.productsCount} Vegetable${v.productsCount === 1 ? '' : 's'}</span>
+        </div>
+
+        <div class="vendor-info-list">
+          <div class="vendor-info-item">
+            <span>📍</span>
+            <div><strong>Address:</strong><br>${escapeHTML(v.address)}</div>
+          </div>
+          <div class="vendor-info-item">
+            <span>⏰</span>
+            <div><strong>Hours:</strong><br>${escapeHTML(v.openingHours)}</div>
+          </div>
+          <div class="vendor-info-item">
+            <span>📞</span>
+            <div><strong>Phone:</strong><br>${escapeHTML(v.phone)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vendor-shop-actions">
+        <a href="${escapeHTML(v.mapsUrl)}" target="_blank" rel="noopener noreferrer" class="btn-maps" style="flex: 1; justify-content: center;">
+          <span>📍</span> Google Maps Directions
+        </a>
+        <a href="vendor-shop.html?vendor=${encodeURIComponent(v.shopName)}" class="btn btn-sm btn-secondary" style="flex: 1; text-align: center;">
+          View Produce →
+        </a>
+      </div>
+    </div>
+  `).join("");
+}
+
+// 3. Cart & Real-time Total Calculation
+function setFulfillment(type) {
+  selectedFulfillment = type;
+  const isDelivery = type === "Home Delivery";
+
+  document.getElementById("fulfillBtn-pickup").classList.toggle("active", !isDelivery);
+  document.getElementById("fulfillBtn-delivery").classList.toggle("active", isDelivery);
+  document.getElementById("deliveryAddressGroup").style.display = isDelivery ? "block" : "none";
+
+  calculateCartTotals();
+}
+
+function renderCart() {
+  const cart = getCart();
+  const emptyBox = document.getElementById("emptyCartMessage");
+  const layout = document.getElementById("cartActiveLayout");
+  const list = document.getElementById("cartItemsList");
+
+  if (cart.length === 0) {
+    emptyBox.style.display = "block";
+    layout.style.display = "none";
+    return;
+  }
+
+  emptyBox.style.display = "none";
+  layout.style.display = "grid";
+
+  list.innerHTML = cart.map(item => `
+    <div class="cart-item-row">
+      <img src="${item.image || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&q=80'}" class="cart-item-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&q=80';">
+      <div class="cart-item-details">
+        <h4>${escapeHTML(item.name)}</h4>
+        <p class="cart-item-vendor">Vendor: ${escapeHTML(item.vendor)}</p>
+        <span class="cart-item-price">₹${item.price} / kg</span>
+      </div>
+      <div class="qty-stepper">
+        <button type="button" onclick="modifyCartQty(${item.productId}, -1)">-</button>
+        <input type="number" value="${item.qty}" readonly>
+        <button type="button" onclick="modifyCartQty(${item.productId}, 1)">+</button>
+      </div>
+      <div style="font-weight: bold; min-width: 60px; text-align: right; color: var(--primary-dark);">
+        ₹${item.price * item.qty}
+      </div>
+      <button onclick="removeCartItem(${item.productId})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px;" title="Remove item">
+        🗑️
+      </button>
+    </div>
+  `).join("");
+
+  calculateCartTotals();
+}
+
+function modifyCartQty(productId, delta) {
+  const cart = getCart();
+  const item = cart.find(i => i.productId === productId);
+  if (!item) return;
+
+  // Check product stock limit from allProducts
+  const product = allProducts.find(p => p.id === productId);
+  const maxStock = product ? product.qty : 999;
+
+  item.qty += delta;
+  if (item.qty <= 0) {
+    const idx = cart.indexOf(item);
+    cart.splice(idx, 1);
+  } else if (item.qty > maxStock) {
+    alert(`Only ${maxStock} kg available for ${item.name}.`);
+    item.qty = maxStock;
+  }
+
+  saveCart(cart);
+  renderCart();
+}
+
+function removeCartItem(productId) {
+  let cart = getCart();
+  cart = cart.filter(i => i.productId !== productId);
+  saveCart(cart);
+  renderCart();
+}
+
+function clearEntireCart() {
+  if (confirm("Are you sure you want to clear your cart?")) {
+    saveCart([]);
+    renderCart();
+  }
+}
+
+// Automatic Price Calculation (Subtotal, Delivery Fee, Grand Total)
+function calculateCartTotals() {
+  const cart = getCart();
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+  const isDelivery = selectedFulfillment === "Home Delivery";
+  // Fee is ₹30 for delivery, but FREE if subtotal >= ₹200
+  let deliveryFee = 0;
+  if (isDelivery) {
+    deliveryFee = subtotal >= 200 ? 0 : 30;
+  }
+
+  const grandTotal = subtotal + deliveryFee;
+
+  document.getElementById("summarySubtotal").textContent = `₹${subtotal}`;
+  document.getElementById("summaryFulfillmentLabel").textContent = isDelivery ? "Home Delivery Fee:" : "Shop Pickup Fee:";
+  document.getElementById("summaryDeliveryFee").textContent = isDelivery ? (deliveryFee === 0 ? "FREE (Orders > ₹200)" : `₹${deliveryFee}`) : "FREE (₹0)";
+  document.getElementById("summaryGrandTotal").textContent = `₹${grandTotal}`;
+
+  return { subtotal, deliveryFee, grandTotal };
+}
+
+// Place Order
+async function placeOrder() {
+  const cart = getCart();
+  if (cart.length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  const isDelivery = selectedFulfillment === "Home Delivery";
+  const address = isDelivery ? document.getElementById("deliveryAddressInput").value.trim() : "Shop Pickup Counter (Collect at vendor stall)";
+  const phone = document.getElementById("orderContactPhone").value.trim();
+  const notes = document.getElementById("orderNotesInput").value.trim();
+
+  if (isDelivery && !address) {
+    alert("Please enter your home delivery address.");
+    document.getElementById("deliveryAddressInput").focus();
+    return;
+  }
+
+  if (!phone) {
+    alert("Please enter a contact phone number.");
+    document.getElementById("orderContactPhone").focus();
+    return;
+  }
+
+  const payload = {
+    customerName: user.name,
+    customerEmail: user.email,
+    customerPhone: phone,
+    fulfillmentType: selectedFulfillment,
+    deliveryAddress: address,
+    notes: notes,
+    items: cart.map(item => ({
+      productId: item.productId,
+      qty: item.qty
+    }))
+  };
+
+  const btn = document.getElementById("btnPlaceOrder");
+  btn.disabled = true;
+  btn.textContent = "Placing order...";
+
+  try {
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.error || "Failed to place order.");
+      btn.disabled = false;
+      btn.textContent = "✅ Place Order Now";
+      return;
+    }
+
+    // Success! Clear cart
+    saveCart([]);
+    alert(`🎉 Order placed successfully!\nOrder Number: ${result.order.orderNumber}\nFulfillment: ${result.order.fulfillmentType}\nTotal: ₹${result.order.totalAmount}`);
+
+    // Refresh products stock & orders
+    await loadProducts();
+    await loadCustomerOrders();
+
+    // Switch to Orders tab to track live status
+    switchTab("orders");
+
+  } catch (err) {
+    alert("Connection error while placing order.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✅ Place Order Now";
+  }
+}
+
+// 4. Load Customer Orders & Live Status
+async function loadCustomerOrders() {
+  const container = document.getElementById("customerOrdersContainer");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/orders?customer=" + encodeURIComponent(user.email || user.name));
+    const orders = await res.json();
+    document.getElementById("statOrdersCount").textContent = orders.length;
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+          <p>You haven't placed any orders yet.</p>
+          <button onclick="switchTab('browse')" class="btn btn-sm">Start Shopping Fresh Produce</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = orders.map(order => {
+      let statusBadgeClass = "badge-status-confirmed";
+      if (order.status === "Ready for Pickup" || order.status === "Out for Delivery") {
+        statusBadgeClass = "badge-status-pickup";
+      } else if (order.status === "Delivered") {
+        statusBadgeClass = "badge-status-delivered";
+      } else if (order.status === "Cancelled") {
+        statusBadgeClass = "badge-status-cancelled";
+      }
+
+      const orderDate = new Date(order.createdAt).toLocaleString();
+      const itemsList = (order.items || []).map(item => `
+        <tr>
+          <td><strong>${escapeHTML(item.name)}</strong></td>
+          <td>${escapeHTML(item.vendor)}</td>
+          <td>${item.qty} kg × ₹${item.price}</td>
+          <td style="text-align: right; font-weight: bold;">₹${item.itemTotal}</td>
+        </tr>
+      `).join("");
+
+      return `
+        <div class="order-card">
+          <div class="order-card-header">
+            <div>
+              <span style="font-weight: bold; font-size: 16px; color: var(--primary-dark);">Order #${escapeHTML(order.orderNumber)}</span>
+              <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px;">${orderDate}</span>
+            </div>
+            <div>
+              <span class="badge-status ${statusBadgeClass}">${escapeHTML(order.status)}</span>
+              <span class="badge" style="background:#e8f0fe; color:#1a73e8; margin-left: 6px;">
+                ${order.fulfillmentType === 'Home Delivery' ? '🚚 Home Delivery' : '🏪 Shop Pickup'}
+              </span>
+            </div>
+          </div>
+
+          <div style="font-size: 13px; margin-bottom: 8px; color: #333;">
+            <strong>📍 Location / Address:</strong> ${escapeHTML(order.deliveryAddress || "-")}
+            ${order.notes ? `<br><strong>📝 Note:</strong> ${escapeHTML(order.notes)}` : ''}
+          </div>
+
+          <table class="order-items-table">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-card); font-size: 12px; color: var(--text-muted);">
+                <th style="padding: 4px 8px;">Vegetable</th>
+                <th style="padding: 4px 8px;">Vendor</th>
+                <th style="padding: 4px 8px;">Quantity & Rate</th>
+                <th style="padding: 4px 8px; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsList}
+            </tbody>
+          </table>
+
+          <div style="display: flex; justify-content: flex-end; gap: 16px; font-size: 13px; border-top: 1px dashed var(--border-card); padding-top: 8px; margin-top: 8px;">
+            <span>Subtotal: ₹${order.itemsSubtotal || (order.totalAmount - (order.deliveryFee || 0))}</span>
+            <span>Fee: ₹${order.deliveryFee || 0}</span>
+            <span style="font-size: 15px; font-weight: bold; color: var(--primary-dark);">Total: ₹${order.totalAmount}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  } catch (err) {
+    container.innerHTML = `<p style="color:red;">Error loading orders.</p>`;
+  }
+}
+
+// 5. Load Customer Enquiries
+async function loadCustomerEnquiries() {
+  const tbody = document.getElementById("myEnquiriesBody");
+  if (!tbody) return;
+
+  try {
+    const res = await fetch("/api/enquiries?customer=" + encodeURIComponent(user.name));
+    const enquiries = await res.json();
+    document.getElementById("statEnquiriesCount").textContent = enquiries.length;
+
+    if (!enquiries || enquiries.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+            You haven't sent any enquiries yet.
+            <br><br>
+            <a href="enquiries.html" class="btn btn-sm">Submit New Enquiry</a>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = enquiries.map(e => `
+      <tr>
+        <td><strong>${escapeHTML(e.product)}</strong></td>
+        <td>
+          <a href="vendor-shop.html?vendor=${encodeURIComponent(e.vendor)}" style="color: var(--primary); text-decoration: none; font-weight: bold;">
+            🏪 ${escapeHTML(e.vendor)}
+          </a>
+        </td>
+        <td>${e.qty} kg</td>
+        <td>${escapeHTML(e.message || "-")}</td>
+        <td>
+          <span class="badge ${e.status === 'Accepted' ? 'badge-success' : (e.status === 'Rejected' ? 'badge-danger' : 'badge-warn')}">
+            ${escapeHTML(e.status || "Pending")}
+          </span>
+        </td>
+        <td>
+          ${e.reply ? `
+            <div style="background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 6px; padding: 6px 8px; font-size: 12px; color: #1e5e32;">
+              <strong>💬 Vendor Reply:</strong><br>${escapeHTML(e.reply)}
+              ${e.replyDate ? `<div style="font-size: 10px; color: #666; margin-top: 2px;">${new Date(e.replyDate).toLocaleDateString()}</div>` : ''}
+            </div>
+          ` : '<span style="color:#888; font-size: 12px;">Awaiting vendor reply...</span>'}
+        </td>
+        <td style="font-size: 12px; color: var(--text-muted);">${new Date(e.date).toLocaleDateString()}</td>
+      </tr>
+    `).join("");
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color: red;">Error loading enquiries.</td></tr>`;
+  }
+}
+</script>
+</body>
+</html>

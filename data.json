@@ -1,0 +1,286 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Tomato",
+      "price": 20,
+      "qty": 9,
+      "vendor": "Green Fresh Veggies",
+      "sold": 6,
+      "addedDate": "2026-10-27T09:00:00.000Z",
+      "expiryDate": "2026-10-31",
+      "category": "Daily Essentials",
+      "image": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80"
+    },
+    {
+      "id": 2,
+      "name": "Potato",
+      "price": 30,
+      "qty": 13,
+      "vendor": "Lakshmi Vegetables",
+      "sold": 10,
+      "addedDate": "2026-10-29T10:00:00.000Z",
+      "expiryDate": "2026-11-15",
+      "category": "Root Vegetables",
+      "image": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80"
+    },
+    {
+      "id": 3,
+      "name": "Onion",
+      "price": 25,
+      "qty": 2,
+      "vendor": "Green Fresh Veggies",
+      "sold": 0,
+      "addedDate": "2026-10-26T08:00:00.000Z",
+      "expiryDate": "2026-11-05",
+      "category": "Daily Essentials",
+      "image": "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400&q=80"
+    },
+    {
+      "id": 1793368037179,
+      "name": "Cabbage",
+      "price": 35,
+      "qty": 20,
+      "vendor": "Green Fresh Veggies",
+      "sold": 0,
+      "addedDate": "2026-10-28T11:00:00.000Z",
+      "expiryDate": "2026-10-29",
+      "category": "Leafy Greens",
+      "image": "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&q=80"
+    },
+    {
+      "id": 1793376287485,
+      "name": "carrot",
+      "price": 25,
+      "qty": 5,
+      "vendor": "Green Fresh Veggies",
+      "sold": 0,
+      "category": "Daily Essentials",
+      "image": "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80",
+      "addedDate": "2026-10-30T16:04:47.485Z",
+      "expiryDate": null
+    }
+  ],
+  "enquiries": [
+    {
+      "id": 101,
+      "name": "Priya Sharma",
+      "product": "Tomato",
+      "vendor": "Green Fresh Veggies",
+      "qty": 5,
+      "message": "Can you keep 5kg fresh tomatoes ready for evening pickup?",
+      "status": "Accepted",
+      "reply": "Hi Priya, 5kg fresh tomatoes are packed and ready for pickup after 5 PM!",
+      "replyDate": "2026-10-30T11:20:00.000Z",
+      "date": "2026-10-30T11:00:00.000Z"
+    },
+    {
+      "id": 102,
+      "name": "Priya Sharma",
+      "product": "Potato",
+      "vendor": "Lakshmi Vegetables",
+      "qty": 3,
+      "message": "Organic potatoes preferred please.",
+      "status": "Accepted",
+      "reply": "Yes, we have freshly harvested organic potatoes set aside for you.",
+      "replyDate": "2026-10-29T15:00:00.000Z",
+      "date": "2026-10-29T14:30:00.000Z"
+    },
+    {
+      "id": 103,
+      "name": "Anil Kumar",
+      "product": "Onion",
+      "vendor": "Green Fresh Veggies",
+      "qty": 2,
+      "message": "Is this fresh stock from today morning?",
+      "status": "Pending",
+      "reply": "",
+      "replyDate": null,
+      "date": "2026-10-30T10:15:00.000Z"
+    },
+    {
+      "id": 104,
+      "name": "Sunita Roy",
+      "product": "Cabbage",
+      "vendor": "Green Mart",
+      "qty": 4,
+      "message": "Need for catering tomorrow morning.",
+      "status": "Pending",
+      "reply": "",
+      "replyDate": null,
+      "date": "2026-10-30T09:00:00.000Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": 17001,
+      "orderNumber": "LV-582194",
+      "customerName": "Priya Sharma",
+      "customerEmail": "customer@veggies.com",
+      "customerPhone": "9123456789",
+      "fulfillmentType": "Home Delivery",
+      "deliveryAddress": "Flat 302, Green Meadows Apt, 5th Cross Road",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Tomato",
+          "price": 20,
+          "qty": 2,
+          "vendor": "Green Fresh Veggies",
+          "itemTotal": 40
+        },
+        {
+          "productId": 2,
+          "name": "Potato",
+          "price": 30,
+          "qty": 1,
+          "vendor": "Lakshmi Vegetables",
+          "itemTotal": 30
+        }
+      ],
+      "deliveryFee": 30,
+      "totalAmount": 100,
+      "status": "Confirmed",
+      "notes": "Please deliver in the evening around 5 PM.",
+      "createdAt": "2026-10-30T11:45:00.000Z"
+    },
+    {
+      "id": 1793378880210,
+      "orderNumber": "LV-767847",
+      "customerName": "Priya Sharma",
+      "customerEmail": "customer@veggies.com",
+      "customerPhone": "9123456789",
+      "fulfillmentType": "Shop Pickup",
+      "deliveryAddress": "Shop Pickup Counter (Collect at vendor stall)",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Tomato",
+          "price": 20,
+          "qty": 1,
+          "vendor": "Green Fresh Veggies",
+          "category": "Daily Essentials",
+          "image": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80",
+          "itemTotal": 20
+        }
+      ],
+      "itemsSubtotal": 20,
+      "deliveryFee": 0,
+      "totalAmount": 20,
+      "status": "Confirmed",
+      "notes": "",
+      "createdAt": "2026-10-30T16:48:00.210Z"
+    },
+    {
+      "id": 1793378899302,
+      "orderNumber": "LV-289727",
+      "customerName": "Priya Sharma",
+      "customerEmail": "customer@veggies.com",
+      "customerPhone": "9123456789",
+      "fulfillmentType": "Home Delivery",
+      "deliveryAddress": "Flat 101, Green View Apartments, 4th Cross",
+      "items": [
+        {
+          "productId": 2,
+          "name": "Potato",
+          "price": 30,
+          "qty": 2,
+          "vendor": "Lakshmi Vegetables",
+          "category": "Root Vegetables",
+          "image": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80",
+          "itemTotal": 60
+        }
+      ],
+      "itemsSubtotal": 60,
+      "deliveryFee": 30,
+      "totalAmount": 90,
+      "status": "Confirmed",
+      "notes": "",
+      "createdAt": "2026-10-30T16:48:19.302Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": 17001,
+      "orderNumber": "LV-582194",
+      "customerName": "Priya Sharma",
+      "customerEmail": "customer@veggies.com",
+      "customerPhone": "9123456789",
+      "fulfillmentType": "Home Delivery",
+      "deliveryAddress": "Flat 302, Green Meadows Apt, 5th Cross Road",
+      "items": [
+        {
+          "productId": 1,
+          "name": "Tomato",
+          "price": 20,
+          "qty": 2,
+          "vendor": "Green Fresh Veggies",
+          "itemTotal": 40
+        },
+        {
+          "productId": 2,
+          "name": "Potato",
+          "price": 30,
+          "qty": 1,
+          "vendor": "Lakshmi Vegetables",
+          "itemTotal": 30
+        }
+      ],
+      "deliveryFee": 30,
+      "totalAmount": 100,
+      "status": "Confirmed",
+      "notes": "Please deliver in the evening around 5 PM.",
+      "createdAt": "2026-10-30T11:45:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "role": "vendor",
+      "name": "Ramesh Patel",
+      "shopName": "Green Fresh Veggies",
+      "email": "vendor@veggies.com",
+      "password": "$2b$10$C2T3RW.1id/2nw3iWIfVU.r1DHqvjffeiEKKngApJ5MtIyLNskWyG",
+      "phone": "9876543210",
+      "address": "Shop #14, Fresh Veggie Market, Gandhi Road, Sector 3",
+      "openingHours": "6:00 AM – 8:30 PM (Daily)",
+      "mapsQuery": "Green Fresh Veggies Vegetable Market Gandhi Road",
+      "createdAt": "2026-10-30T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "role": "customer",
+      "name": "Priya Sharma",
+      "email": "customer@veggies.com",
+      "password": "$2b$10$Yu1iviMwUXnhDQ/m3Dg7eOZcOSDtRm8ym/P7vMzKsHKEuHrVgeqkW",
+      "phone": "9123456789",
+      "createdAt": "2026-10-30T10:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "role": "vendor",
+      "name": "Lakshmi Devi",
+      "shopName": "Lakshmi Vegetables",
+      "email": "lakshmi@veggies.com",
+      "password": "$2b$10$C2T3RW.1id/2nw3iWIfVU.r1DHqvjffeiEKKngApJ5MtIyLNskWyG",
+      "phone": "9845123456",
+      "address": "Stall #8, Daily Farmer Bazaar, Station Road, Market Area",
+      "openingHours": "6:30 AM – 9:00 PM (Daily)",
+      "mapsQuery": "Farmer Bazaar Station Road",
+      "createdAt": "2026-10-30T10:00:00.000Z"
+    },
+    {
+      "id": 1793373238563,
+      "role": "vendor",
+      "name": "Ramesh patel",
+      "email": "deepalideepu562@gemail.com",
+      "password": "7c5d8a7f87cb9f3060aaf8b4a9df30d9d81ff553321006815133f8b0b6ac0e52",
+      "phone": "8431161359",
+      "shopName": "Green Mart",
+      "address": "Plot #22, Green Valley Commercial Complex, Main Highway",
+      "openingHours": "7:00 AM – 9:30 PM (Daily)",
+      "mapsQuery": "Green Valley Commercial Complex",
+      "createdAt": "2026-10-30T15:13:58.563Z"
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Portal - Login & Registration | Local Veggies</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-card {
+      max-width: 480px;
+      margin: 20px auto;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border-card);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <div class="panel auth-card">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <span class="badge badge-customer" style="font-size: 13px; padding: 5px 12px;">🛒 Customer Portal</span>
+      <h2 style="margin: 10px 0 4px 0;">Customer Sign In & Sign Up</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+        Sign in to book fresh produce, send enquiries to vendors, and manage your orders.
+      </p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" id="loginTabBtn" onclick="showTab('login')">Customer Log In</button>
+      <button class="tab-btn" id="registerTabBtn" onclick="showTab('register')">Register Account</button>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="alertBox" class="notice" style="display: none;"></div>
+
+    <!-- Login Form -->
+    <form id="customerLoginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="loginEmail">Email Address</label>
+        <input type="email" id="loginEmail" required placeholder="e.g. customer@veggies.com">
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" required placeholder="Enter your password">
+      </div>
+      <button type="submit" class="btn" style="width: 100%;">Log In as Customer</button>
+      <button type="button" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 8px;" onclick="fillDemoCustomer()">
+        ⚡ Quick Fill Demo: customer@veggies.com
+      </button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="customerRegisterForm" style="display: none;" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="regName">Full Name *</label>
+        <input type="text" id="regName" required placeholder="e.g. Priya Sharma">
+      </div>
+      <div class="form-group">
+        <label for="regEmail">Email Address *</label>
+        <input type="email" id="regEmail" required placeholder="e.g. priya@example.com">
+      </div>
+      <div class="form-group">
+        <label for="regPhone">Phone Number (Optional)</label>
+        <input type="tel" id="regPhone" placeholder="e.g. 9123456789">
+      </div>
+      <div class="form-group">
+        <label for="regPassword">Password * (bcrypt encrypted)</label>
+        <input type="password" id="regPassword" required placeholder="Minimum 4 characters">
+      </div>
+      <div class="form-group">
+        <label for="regConfirmPassword">Confirm Password *</label>
+        <input type="password" id="regConfirmPassword" required placeholder="Re-enter password">
+      </div>
+      <button type="submit" class="btn" style="width: 100%;">Create Customer Account</button>
+    </form>
+
+    <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-card); text-align: center; font-size: 13px;">
+      Are you a vegetable farmer or vendor?<br>
+      <a href="vendor-auth.html" style="color: var(--primary); font-weight: bold;">Go to Vendor Portal →</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("customer-auth");
+
+function showAlert(text, type = "error") {
+  const box = document.getElementById("alertBox");
+  box.textContent = text;
+  box.className = "notice " + (type === "success" ? "notice-info" : "notice-error");
+  box.style.display = "block";
+}
+
+function clearAlert() {
+  const box = document.getElementById("alertBox");
+  box.textContent = "";
+  box.style.display = "none";
+}
+
+function showTab(tab) {
+  clearAlert();
+  const isLogin = tab === "login";
+  document.getElementById("customerLoginForm").style.display = isLogin ? "block" : "none";
+  document.getElementById("customerRegisterForm").style.display = isLogin ? "none" : "block";
+  document.getElementById("loginTabBtn").className = "tab-btn " + (isLogin ? "active" : "");
+  document.getElementById("registerTabBtn").className = "tab-btn " + (!isLogin ? "active" : "");
+}
+
+function fillDemoCustomer() {
+  document.getElementById("loginEmail").value = "customer@veggies.com";
+  document.getElementById("loginPassword").value = "customer123";
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  clearAlert();
+
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, role: "customer" })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || "Login failed.", "error");
+      return;
+    }
+
+    localStorage.setItem("localVeggiesUser", JSON.stringify(data.user));
+    showAlert("Login successful! Opening Home page...", "success");
+    setTimeout(() => {
+      window.location.href = "home.html";
+    }, 700);
+  } catch (err) {
+    showAlert("Unable to connect to the backend server.", "error");
+  }
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  clearAlert();
+
+  const name = document.getElementById("regName").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const phone = document.getElementById("regPhone").value.trim();
+  const password = document.getElementById("regPassword").value;
+  const confirmPassword = document.getElementById("regConfirmPassword").value;
+
+  if (password !== confirmPassword) {
+    showAlert("Passwords do not match.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "customer",
+        name,
+        email,
+        phone,
+        password
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || "Registration failed.", "error");
+      return;
+    }
+
+    localStorage.setItem("localVeggiesUser", JSON.stringify(data.user));
+    showAlert("Account created! Opening Home page...", "success");
+    setTimeout(() => {
+      window.location.href = "home.html";
+    }, 700);
+  } catch (err) {
+    showAlert("Unable to connect to the backend server.", "error");
+  }
+}
+
+// Redirect if already logged in as customer
+const existingUser = getCurrentUser();
+if (existingUser && existingUser.role === "customer") {
+  showAlert(`You are already signed in as ${existingUser.name}. Opening Home...`, "success");
+  setTimeout(() => {
+    window.location.href = "home.html";
+  }, 800);
+}
+</script>
+</body>
+</html>

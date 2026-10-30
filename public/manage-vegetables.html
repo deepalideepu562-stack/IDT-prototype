@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Vegetables | Vendor Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: white;
+      padding: 24px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <!-- Notice if not logged in as vendor -->
+  <div id="guestNotice" class="notice notice-warn" style="display: none;">
+    <h3>Vendor Access Only</h3>
+    <p>You must be signed in with a vendor account to add and manage vegetables.</p>
+    <a href="vendor-auth.html" class="btn btn-sm">Sign In as Vendor →</a>
+  </div>
+
+  <div id="manageContent" style="display: none;">
+    <!-- Add/Edit Vegetable Panel -->
+    <section class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <h2 style="margin: 0;" id="formTitle">➕ Add New Vegetable</h2>
+        <button id="cancelEditBtn" class="btn btn-sm btn-secondary" style="display: none;" onclick="cancelEditMode()">Cancel Edit</button>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 16px 0;">
+        List fresh vegetables with current pricing, inventory quantity, and optional expiry dates to enable alerts.
+      </p>
+
+      <div id="formAlert" class="notice" style="display: none;"></div>
+
+      <form id="productForm" onsubmit="handleProductSubmit(event)">
+        <input type="hidden" id="editProductId" value="">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prodName">Vegetable Name *</label>
+            <input type="text" id="prodName" required placeholder="e.g. Fresh Tomatoes">
+          </div>
+          <div class="form-group">
+            <label for="prodPrice">Price per kg (₹) *</label>
+            <input type="number" id="prodPrice" required min="0" step="1" placeholder="e.g. 25">
+          </div>
+          <div class="form-group">
+            <label for="prodQty">Available Stock (kg) *</label>
+            <input type="number" id="prodQty" required min="0" step="1" placeholder="e.g. 20">
+          </div>
+          <div class="form-group">
+            <label for="prodCategory">Category *</label>
+            <select id="prodCategory">
+              <option value="Daily Essentials">Daily Essentials</option>
+              <option value="Leafy Greens">Leafy Greens</option>
+              <option value="Root Vegetables">Root Vegetables</option>
+              <option value="Gourds & Squash">Gourds & Cucumbers</option>
+              <option value="Organic Produce">Organic Produce</option>
+              <option value="Exotic Vegetables">Exotic Vegetables</option>
+              <option value="Other Vegetables">Other Vegetables</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="prodImage">Image URL (Optional)</label>
+            <input type="url" id="prodImage" placeholder="https://example.com/image.jpg">
+          </div>
+          <div class="form-group">
+            <label for="prodExpiry">Expiry Date / Best Before (Optional)</label>
+            <input type="date" id="prodExpiry">
+          </div>
+          <div class="form-group">
+            <label for="prodVendor">Shop / Farm Name</label>
+            <input type="text" id="prodVendor" readonly style="background: #eef7ed;">
+          </div>
+        </div>
+        <button type="submit" class="btn" id="submitBtn">Add Vegetable</button>
+      </form>
+    </section>
+
+    <!-- My Inventory Table Panel -->
+    <section class="panel">
+      <h2>📋 Your Active Produce Listings</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 14px 0;">
+        Track available stock, record sales, adjust prices, or remove items.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Vegetable</th>
+              <th>Price (₹/kg)</th>
+              <th>Date Added</th>
+              <th>Expiry Date</th>
+              <th>In Stock</th>
+              <th>Sold (kg)</th>
+              <th>Status / Alert</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTableBody">
+            <tr><td colspan="8">Loading inventory...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- Quick "Mark as Sold" Modal -->
+<div id="sellModal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <h3 id="modalProdTitle" style="margin-top:0; color:var(--primary);">Record Sale</h3>
+    <p style="font-size: 13px; color: var(--text-muted);" id="modalProdInfo"></p>
+    <div class="form-group">
+      <label for="sellAmountInput">Quantity Sold (kg):</label>
+      <input type="number" id="sellAmountInput" min="1" step="1">
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeSellModal()">Cancel</button>
+      <button class="btn btn-sm" onclick="confirmMarkSold()">Confirm Sale</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("manage-vegetables");
+
+const user = getCurrentUser();
+let myProducts = [];
+let activeModalProductId = null;
+let activeModalMaxQty = 0;
+
+if (!user || user.role !== "vendor") {
+  document.getElementById("guestNotice").style.display = "block";
+} else {
+  document.getElementById("manageContent").style.display = "block";
+  document.getElementById("prodVendor").value = user.shopName || user.name;
+  loadInventory();
+}
+
+function showFormAlert(text, type = "error") {
+  const box = document.getElementById("formAlert");
+  box.textContent = text;
+  box.className = "notice " + (type === "success" ? "notice-info" : "notice-error");
+  box.style.display = "block";
+}
+
+function clearFormAlert() {
+  const box = document.getElementById("formAlert");
+  box.textContent = "";
+  box.style.display = "none";
+}
+
+async function loadInventory() {
+  const tbody = document.getElementById("inventoryTableBody");
+  try {
+    const res = await fetch("/api/products");
+    const all = await res.json();
+    const vendorName = (user.shopName || user.name).toLowerCase();
+    const now = new Date();
+
+    myProducts = all.filter(p => p.vendor.toLowerCase() === vendorName);
+
+    if (myProducts.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 20px;">
+            You have not added any vegetables yet. Use the form above to add your first item!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = myProducts.map(p => {
+      const added = p.addedDate ? new Date(p.addedDate) : new Date(p.id);
+      const daysUnsold = Math.floor((now - added) / (1000 * 60 * 60 * 24));
+
+      let alertBadge = '<span class="badge badge-success">In Stock</span>';
+      if (p.qty <= 0) {
+        alertBadge = '<span class="badge badge-danger">Out of Stock</span>';
+      } else if (p.expiryDate) {
+        const exp = new Date(p.expiryDate + "T23:59:59");
+        if (exp < now) {
+          alertBadge = '<span class="badge badge-danger">⛔ Expired</span>';
+        } else if ((exp - now) / (1000 * 60 * 60 * 24) <= 2) {
+          alertBadge = '<span class="badge badge-warn" style="background:#fff3cd; color:#856404;">⏳ Expiring Soon</span>';
+        } else if (daysUnsold >= 2) {
+          alertBadge = `<span class="badge badge-warn" style="background:#fff3cd; color:#856404;">⚠️ Unsold (${daysUnsold}d)</span>`;
+        }
+      } else if (daysUnsold >= 2) {
+        alertBadge = `<span class="badge badge-warn" style="background:#fff3cd; color:#856404;">⚠️ Unsold (${daysUnsold}d)</span>`;
+      }
+
+      const formattedAdded = added.toLocaleDateString();
+      const formattedExpiry = p.expiryDate ? p.expiryDate : '<span style="color:#999;">-</span>';
+
+      return `
+        <tr>
+          <td><strong>${escapeHTML(p.name)}</strong></td>
+          <td>₹${p.price}</td>
+          <td>${formattedAdded}</td>
+          <td>${formattedExpiry}</td>
+          <td><strong>${p.qty} kg</strong></td>
+          <td>${p.sold || 0} kg</td>
+          <td>${alertBadge}</td>
+          <td>
+            <div style="display:flex; gap: 4px; flex-wrap: wrap;">
+              ${p.qty > 0 ? `<button class="btn btn-sm" onclick="openSellModal(${p.id}, '${escapeHTML(p.name)}', ${p.qty})">Mark Sold</button>` : ''}
+              <button class="btn btn-sm btn-secondary" onclick="enterEditMode(${p.id})">✏️ Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteVegetable(${p.id})">🗑 Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Check if URL has ?edit=ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get("edit");
+    if (editId) {
+      enterEditMode(Number(editId));
+    }
+  } catch (err) {
+    tbody.innerHTML = "<tr><td colspan='8' style='color:red;'>Failed to load inventory.</td></tr>";
+  }
+}
+
+function enterEditMode(id) {
+  const product = myProducts.find(p => p.id === id);
+  if (!product) return;
+
+  document.getElementById("editProductId").value = product.id;
+  document.getElementById("prodName").value = product.name;
+  document.getElementById("prodPrice").value = product.price;
+  document.getElementById("prodQty").value = product.qty;
+  document.getElementById("prodCategory").value = product.category || "Daily Essentials";
+  document.getElementById("prodImage").value = product.image || "";
+  document.getElementById("prodExpiry").value = product.expiryDate || "";
+
+  document.getElementById("formTitle").textContent = "✏️ Edit Vegetable: " + product.name;
+  document.getElementById("submitBtn").textContent = "Save Changes";
+  document.getElementById("cancelEditBtn").style.display = "inline-block";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function cancelEditMode() {
+  document.getElementById("editProductId").value = "";
+  document.getElementById("prodName").value = "";
+  document.getElementById("prodPrice").value = "";
+  document.getElementById("prodQty").value = "";
+  document.getElementById("prodCategory").value = "Daily Essentials";
+  document.getElementById("prodImage").value = "";
+  document.getElementById("prodExpiry").value = "";
+
+  document.getElementById("formTitle").textContent = "➕ Add New Vegetable";
+  document.getElementById("submitBtn").textContent = "Add Vegetable";
+  document.getElementById("cancelEditBtn").style.display = "none";
+  clearFormAlert();
+}
+
+async function handleProductSubmit(e) {
+  e.preventDefault();
+  clearFormAlert();
+
+  const editId = document.getElementById("editProductId").value;
+  const name = document.getElementById("prodName").value.trim();
+  const price = Number(document.getElementById("prodPrice").value);
+  const qty = Number(document.getElementById("prodQty").value);
+  const category = document.getElementById("prodCategory").value;
+  const image = document.getElementById("prodImage").value.trim();
+  const expiryDate = document.getElementById("prodExpiry").value;
+  const vendor = user.shopName || user.name;
+
+  try {
+    let url = "/api/products";
+    let method = "POST";
+
+    if (editId) {
+      url = `/api/products/${editId}`;
+      method = "PUT";
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        price,
+        qty,
+        vendor,
+        category,
+        image,
+        expiryDate,
+        vendorAuth: vendor
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showFormAlert(data.error || "Failed to save vegetable.", "error");
+      return;
+    }
+
+    showFormAlert(editId ? "Vegetable updated successfully!" : "Vegetable added successfully!", "success");
+    cancelEditMode();
+    loadInventory();
+  } catch (err) {
+    showFormAlert("Network error communicating with server.", "error");
+  }
+}
+
+async function deleteVegetable(id) {
+  if (!confirm("Are you sure you want to remove this vegetable from your catalog?")) return;
+
+  try {
+    const vendor = encodeURIComponent(user.shopName || user.name);
+    const res = await fetch(`/api/products/${id}?vendor=${vendor}`, { method: "DELETE" });
+    if (res.ok) {
+      loadInventory();
+      showFormAlert("Vegetable deleted successfully.", "success");
+    } else {
+      const data = await res.json();
+      showFormAlert(data.error || "Unable to delete item.", "error");
+    }
+  } catch (err) {
+    showFormAlert("Error communicating with server.", "error");
+  }
+}
+
+function openSellModal(prodId, prodName, maxQty) {
+  activeModalProductId = prodId;
+  activeModalMaxQty = maxQty;
+
+  document.getElementById("modalProdTitle").textContent = "Record Sale: " + prodName;
+  document.getElementById("modalProdInfo").textContent = `Available stock in inventory: ${maxQty} kg`;
+  const input = document.getElementById("sellAmountInput");
+  input.value = maxQty;
+  input.max = maxQty;
+  document.getElementById("sellModal").style.display = "flex";
+}
+
+function closeSellModal() {
+  document.getElementById("sellModal").style.display = "none";
+  activeModalProductId = null;
+}
+
+async function confirmMarkSold() {
+  const amount = Number(document.getElementById("sellAmountInput").value);
+  if (!amount || amount <= 0 || amount > activeModalMaxQty) {
+    alert(`Please enter a valid quantity between 1 and ${activeModalMaxQty} kg.`);
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/products/${activeModalProductId}/mark-sold`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ soldAmount: amount })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Unable to update sold quantity.");
+      return;
+    }
+
+    closeSellModal();
+    loadInventory();
+    showFormAlert(`Successfully marked ${amount} kg as sold!`, "success");
+  } catch (err) {
+    alert("Network error updating sold quantity.");
+  }
+}
+</script>
+</body>
+</html>

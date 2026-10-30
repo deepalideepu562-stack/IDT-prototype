@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Veggies - Choose Login or Register</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background-color: var(--bg-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .welcome-container {
+      max-width: 720px;
+      margin: 30px auto;
+      width: 100%;
+      padding: 0 16px;
+    }
+    .role-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .role-card {
+      background: white;
+      border: 2px solid var(--border-card);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow);
+    }
+    .role-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .role-card.active {
+      border-color: var(--primary);
+      background: #fbfdfa;
+      box-shadow: 0 4px 12px rgba(36, 116, 61, 0.15);
+    }
+    .role-card-icon {
+      font-size: 38px;
+      margin-bottom: 8px;
+    }
+    .role-card h3 {
+      margin: 0 0 6px 0;
+      color: var(--primary);
+      font-size: 18px;
+    }
+    .role-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .auth-box {
+      background: white;
+      border-radius: 12px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-card);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .tab-bar {
+      display: flex;
+      border-bottom: 2px solid var(--border-card);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌱 Local Veggies</h1>
+  <p>Fresh Produce Direct from Local Vendors & Farmers</p>
+</header>
+
+<main class="welcome-container">
+  <div style="text-align: center; margin-bottom: 24px;">
+    <h2 style="color: var(--primary); margin: 0 0 6px 0;">Welcome to Local Veggies</h2>
+    <p style="color: var(--text-muted); margin: 0; font-size: 15px;">
+      Please select an option below to Log In or Register:
+    </p>
+  </div>
+
+  <!-- 1. First Page: Two distinct options -->
+  <div class="role-options">
+    <div class="role-card active" id="cardVendor" onclick="selectRole('vendor')">
+      <div class="role-card-icon">👨‍🌾</div>
+      <h3>Vendor Login / Register</h3>
+      <p>For vegetable farmers and shop owners to manage stock and sales.</p>
+    </div>
+
+    <div class="role-card" id="cardCustomer" onclick="selectRole('customer')">
+      <div class="role-card-icon">🛒</div>
+      <h3>Customer Login / Register</h3>
+      <p>For buyers looking to browse fresh local vegetables and send enquiries.</p>
+    </div>
+  </div>
+
+  <!-- Auth Form Container -->
+  <div class="auth-box">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <span class="badge badge-vendor" id="activeRoleBadge">👨‍🌾 Vendor Access</span>
+      <h3 style="margin: 8px 0 0 0;" id="activeRoleHeading">Vendor Sign In / Sign Up</h3>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabLoginBtn" onclick="switchMode('login')">Log In</button>
+      <button class="tab-btn" id="tabRegisterBtn" onclick="switchMode('register')">Register</button>
+    </div>
+
+    <div id="authAlert" class="notice" style="display: none;"></div>
+
+    <!-- 3. Login Form (Email & Password) -->
+    <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+      <div class="form-group">
+        <label for="loginEmail">Email Address</label>
+        <input type="email" id="loginEmail" required placeholder="name@example.com">
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" required placeholder="Enter password">
+      </div>
+      <button type="submit" class="btn" style="width: 100%;" id="loginSubmitBtn">Log In</button>
+
+      <button type="button" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 10px;" id="demoFillBtn" onclick="fillDemo()">
+        ⚡ Quick Fill Demo Credentials
+      </button>
+    </form>
+
+    <!-- 2. Registration Form (Name, Email & Password) -->
+    <form id="registerForm" style="display: none;" onsubmit="handleRegisterSubmit(event)">
+      <div class="form-group">
+        <label for="regName">Full Name *</label>
+        <input type="text" id="regName" required placeholder="Enter your name">
+      </div>
+      <div class="form-group">
+        <label for="regEmail">Email Address *</label>
+        <input type="email" id="regEmail" required placeholder="name@example.com">
+      </div>
+      <div class="form-group">
+        <label for="regPassword">Password *</label>
+        <input type="password" id="regPassword" required placeholder="At least 4 characters">
+      </div>
+      <button type="submit" class="btn" style="width: 100%;" id="registerSubmitBtn">Create Account</button>
+    </form>
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script>
+let currentRole = "vendor";
+let currentMode = "login";
+
+// If already logged in, redirect straight to Home page
+(function checkExistingSession() {
+  try {
+    const user = JSON.parse(localStorage.getItem("localVeggiesUser"));
+    if (user && user.role) {
+      window.location.href = "home.html";
+    }
+  } catch (e) {}
+})();
+
+function selectRole(role) {
+  currentRole = role;
+  clearAlert();
+
+  const isVendor = role === "vendor";
+  document.getElementById("cardVendor").className = "role-card " + (isVendor ? "active" : "");
+  document.getElementById("cardCustomer").className = "role-card " + (!isVendor ? "active" : "");
+
+  const badge = document.getElementById("activeRoleBadge");
+  badge.className = "badge " + (isVendor ? "badge-vendor" : "badge-customer");
+  badge.textContent = isVendor ? "👨‍🌾 Vendor Access" : "🛒 Customer Access";
+
+  document.getElementById("activeRoleHeading").textContent = isVendor
+    ? "Vendor Sign In / Sign Up"
+    : "Customer Sign In / Sign Up";
+
+  document.getElementById("loginSubmitBtn").textContent = isVendor
+    ? "Log In as Vendor"
+    : "Log In as Customer";
+
+  document.getElementById("registerSubmitBtn").textContent = isVendor
+    ? "Register as Vendor"
+    : "Register as Customer";
+
+  fillDemo();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  clearAlert();
+
+  const isLogin = mode === "login";
+  document.getElementById("loginForm").style.display = isLogin ? "block" : "none";
+  document.getElementById("registerForm").style.display = isLogin ? "none" : "block";
+
+  document.getElementById("tabLoginBtn").className = "tab-btn " + (isLogin ? "active" : "");
+  document.getElementById("tabRegisterBtn").className = "tab-btn " + (!isLogin ? "active" : "");
+}
+
+function fillDemo() {
+  if (currentRole === "vendor") {
+    document.getElementById("loginEmail").value = "vendor@veggies.com";
+    document.getElementById("loginPassword").value = "vendor123";
+  } else {
+    document.getElementById("loginEmail").value = "customer@veggies.com";
+    document.getElementById("loginPassword").value = "customer123";
+  }
+}
+
+function showAlert(text, type = "error") {
+  const box = document.getElementById("authAlert");
+  box.textContent = text;
+  box.className = "notice " + (type === "success" ? "notice-info" : "notice-error");
+  box.style.display = "block";
+}
+
+function clearAlert() {
+  const box = document.getElementById("authAlert");
+  box.textContent = "";
+  box.style.display = "none";
+}
+
+// 3. Login Submit (Email & Password)
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  clearAlert();
+
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, role: currentRole })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || "Login failed. Please check your credentials.", "error");
+      return;
+    }
+
+    localStorage.setItem("localVeggiesUser", JSON.stringify(data.user));
+    showAlert("Login successful! Opening Home page...", "success");
+
+    // 4. After successful login, open Home page
+    setTimeout(() => {
+      window.location.href = "home.html";
+    }, 700);
+  } catch (err) {
+    showAlert("Unable to connect to server.", "error");
+  }
+}
+
+// 2. Register Submit (Name, Email & Password)
+async function handleRegisterSubmit(e) {
+  e.preventDefault();
+  clearAlert();
+
+  const name = document.getElementById("regName").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value;
+
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: currentRole,
+        name,
+        email,
+        password
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || "Registration failed.", "error");
+      return;
+    }
+
+    localStorage.setItem("localVeggiesUser", JSON.stringify(data.user));
+    showAlert("Account created! Opening Home page...", "success");
+
+    // 4. After successful registration, open Home page
+    setTimeout(() => {
+      window.location.href = "home.html";
+    }, 700);
+  } catch (err) {
+    showAlert("Unable to connect to server.", "error");
+  }
+}
+
+// Initialize demo for vendor
+fillDemo();
+</script>
+</body>
+</html>

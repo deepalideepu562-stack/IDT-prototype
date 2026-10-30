@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Dashboard | Local Veggies Marketplace</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="header-nav-container"></div>
+
+<main>
+  <!-- Main Overview Panel -->
+  <section class="panel">
+    <h2>📊 Marketplace Sales & Inventory Dashboard</h2>
+    <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 16px 0;">
+      Real-time analytics on vegetable availability, sold quantities, and overall market demand.
+    </p>
+
+    <!-- Global KPI Cards -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-number" id="globalTotalSold">-</div>
+        <div class="stat-label">Total Sold (kg)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="globalTotalStock">-</div>
+        <div class="stat-label">Stock in Market (kg)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="globalTotalItems">-</div>
+        <div class="stat-label">Vegetable Varieties</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="globalTotalVendors">-</div>
+        <div class="stat-label">Active Vendors</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vendor Personal Breakdown (if signed in as Vendor) -->
+  <section class="panel" id="vendorSalesPanel" style="display: none; border-left: 4px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <div>
+        <span class="badge badge-vendor">Your Shop Performance</span>
+        <h3 id="vendorShopName" style="margin: 6px 0 0 0; color: var(--primary);">Shop Sales</h3>
+      </div>
+      <a href="manage-vegetables.html" class="btn btn-sm btn-secondary">Update Stock / Sales →</a>
+    </div>
+
+    <div class="stats-grid" style="margin-top: 14px;">
+      <div class="stat-box">
+        <div class="stat-number" id="vendorSold">-</div>
+        <div class="stat-label">Your Sold (kg)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="vendorStock">-</div>
+        <div class="stat-label">Your Remaining Stock</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="vendorRevenue">-</div>
+        <div class="stat-label">Est. Revenue (₹)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Sales Breakdown Table -->
+  <section class="panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <h3 style="margin: 0;">Detailed Produce Breakdown</h3>
+      <input id="tableSearch" placeholder="Filter table by vegetable or vendor..." style="max-width: 260px;" oninput="filterSalesTable()">
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Vegetable</th>
+            <th>Vendor / Farm</th>
+            <th>Price (₹/kg)</th>
+            <th>Date Added</th>
+            <th>Expiry Date</th>
+            <th>Stock Left</th>
+            <th>Total Sold</th>
+            <th>Est. Sales (₹)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="salesTableBody">
+          <tr><td colspan="9">Loading sales metrics...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>© 2026 Local Veggies Marketplace • Simple, Fresh & Direct from Local Vendors</p>
+</footer>
+
+<script src="nav.js"></script>
+<script>
+initNavigation("sales");
+
+let productsList = [];
+const currentUser = getCurrentUser();
+
+async function loadSalesData() {
+  try {
+    const res = await fetch("/api/products");
+    productsList = await res.json();
+
+    // Global Stats
+    const totalSold = productsList.reduce((sum, p) => sum + Number(p.sold || 0), 0);
+    const totalStock = productsList.reduce((sum, p) => sum + Number(p.qty || 0), 0);
+    const uniqueVendors = new Set(productsList.map(p => p.vendor.toLowerCase())).size;
+
+    document.getElementById("globalTotalSold").textContent = totalSold + " kg";
+    document.getElementById("globalTotalStock").textContent = totalStock + " kg";
+    document.getElementById("globalTotalItems").textContent = productsList.length;
+    document.getElementById("globalTotalVendors").textContent = uniqueVendors;
+
+    // Vendor Specific Stats
+    if (currentUser && currentUser.role === "vendor") {
+      const vendorPanel = document.getElementById("vendorSalesPanel");
+      vendorPanel.style.display = "block";
+      document.getElementById("vendorShopName").textContent = currentUser.shopName || currentUser.name;
+
+      const shopName = (currentUser.shopName || currentUser.name).toLowerCase();
+      const myItems = productsList.filter(p => p.vendor.toLowerCase() === shopName);
+
+      const mySold = myItems.reduce((sum, p) => sum + Number(p.sold || 0), 0);
+      const myStock = myItems.reduce((sum, p) => sum + Number(p.qty || 0), 0);
+      const myRevenue = myItems.reduce((sum, p) => sum + (Number(p.sold || 0) * Number(p.price || 0)), 0);
+
+      document.getElementById("vendorSold").textContent = mySold + " kg";
+      document.getElementById("vendorStock").textContent = myStock + " kg";
+      document.getElementById("vendorRevenue").textContent = "₹" + myRevenue.toLocaleString();
+    }
+
+    renderSalesTable(productsList);
+  } catch (err) {
+    document.getElementById("salesTableBody").innerHTML =
+      "<tr><td colspan='7' style='color:red;'>Failed to load sales information.</td></tr>";
+  }
+}
+
+function filterSalesTable() {
+  const q = document.getElementById("tableSearch").value.toLowerCase().trim();
+  const filtered = productsList.filter(p =>
+    p.name.toLowerCase().includes(q) || p.vendor.toLowerCase().includes(q)
+  );
+  renderSalesTable(filtered);
+}
+
+function renderSalesTable(items) {
+  const tbody = document.getElementById("salesTableBody");
+  if (!items || items.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No matching produce found.</td></tr>";
+    return;
+  }
+
+  tbody.innerHTML = items.map(p => {
+    const sold = Number(p.sold || 0);
+    const price = Number(p.price || 0);
+    const estValue = sold * price;
+    const addedFormatted = p.addedDate ? new Date(p.addedDate).toLocaleDateString() : "-";
+    const expiryFormatted = p.expiryDate ? p.expiryDate : "-";
+
+    return `
+      <tr>
+        <td><strong>${escapeHTML(p.name)}</strong></td>
+        <td>👨‍🌾 ${escapeHTML(p.vendor)}</td>
+        <td>₹${price}</td>
+        <td>${addedFormatted}</td>
+        <td>${expiryFormatted}</td>
+        <td>${p.qty} kg</td>
+        <td>${sold} kg</td>
+        <td><strong>₹${estValue.toLocaleString()}</strong></td>
+        <td>
+          ${p.qty > 0
+            ? '<span class="badge badge-success">In Stock</span>'
+            : '<span class="badge badge-danger">Out of Stock</span>'}
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+loadSalesData();
+</script>
+</body>
+</html>
